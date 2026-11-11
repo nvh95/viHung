@@ -7,6 +7,7 @@ Try it now: <https://vi.hung.dev>
 
 ## What's inside
 
+- **Learn, then practice.** Each lesson opens as a short slide deck: one idea or one key per slide, advanced with Next, → / Enter, a tap or a swipe. Key slides let you try the key on your keyboard, and a quick check must be answered correctly before moving on. Then a separate practice screen holds only the terminal and drills. Lessons you have already seen open straight to practice; "Review the concepts" goes back to the slides.
 - **12 lessons, 46 drills**, in order:
   1. Get out alive (`:q`, `:q!`, `Esc`)
   2. Normal mode and Insert mode
@@ -23,7 +24,6 @@ Try it now: <https://vi.hung.dev>
 - **Scoring**: each drill has a par (the minimum number of keys). Finishing at or under par earns 3 stars; stars raise your rank.
 - **Goal panel**: shows the target text with lines that still differ highlighted, plus a checklist (text matches, saved, vi closed).
 - **Mistake coach**: explains what went wrong when a learner types in Normal mode, types `:wq` inside Insert mode, hits E37, edits a root file without sudo, presses `Ctrl-S`, `Ctrl-Z` or `Ctrl-C`, leaves Caps Lock on, or meets a leftover swap file.
-- **Pop quiz** at the end of each lesson.
 - **Arcade**: two 60-second games, *Cursor Rush* (reach targets fast) and *Line Surgeon* (delete junk lines, keep good ones).
 - **Key quiz**: type the exact keys for 10 random tasks.
 - **Key card**: every command from the lessons on one page.
@@ -71,7 +71,7 @@ Everything lives in `index.html`:
 | `Vi` class | A small vi engine: Normal, Insert, command-line and search modes; motions, operators (`d`, `c`, `y`) with counts, registers, undo/redo, `:w`/`:q`/`:wq`/`:x`, `:set nu`, `:s` and `:%s`, `/` and `?` search. |
 | `Term` class | A fake shell around vi with a virtual file system: `vi`, `sudo vi`, `cat`, `ls`, `fg`, root-owned files, swap-file prompts, `Ctrl-S` freeze with queued keys, and `Ctrl-Z` suspend. |
 | `Player` class | Renders a terminal, captures keys, tracks targets and keystrokes, checks the drill's goal and shows the win screen. |
-| `LESSONS` array | Lesson text, key tables, common-mistake notes, pop quizzes and drills. |
+| `LESSONS` array | Lesson text, key tables, common-mistake notes, quick checks and drills. Each `intro` paragraph and each `keys` row becomes its own slide (`buildSlides`). |
 | Views | Lessons, Arcade, Key quiz and Key card, switched by the URL hash (`#lessons`, `#arcade`, `#quiz`, `#keys`). |
 
 ### Adding a drill
