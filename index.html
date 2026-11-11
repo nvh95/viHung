@@ -307,6 +307,22 @@ dialog.hint .btn{align-self:flex-end;margin-top:6px}
 @keyframes sinb{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
 @media (max-width:560px){.dhint{display:none}.slide{min-height:300px}}
 
+/* first-visit welcome */
+.welcome{max-width:920px;margin:0 auto;padding-block:28px 48px}
+.wsteps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0;padding:0;list-style:none}
+.wsteps li{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.wsteps .n{font:700 13px var(--f-mono);color:var(--accent)}
+.wsteps b{font:700 19px var(--f-display)}
+.wsteps span{font-size:15px;color:var(--muted);line-height:1.45}
+.mini{background:var(--t-bg);border:1px solid var(--t-line);border-radius:12px;overflow:hidden;max-width:520px;font:13.5px/1.6 var(--f-mono);color:var(--t-fg)}
+.mini .mb{background:var(--t-bar);padding:6px 12px;color:#8B99A7;font-size:12px;border-bottom:1px solid var(--t-line)}
+.mini pre{margin:0;padding:10px 14px;white-space:pre-wrap}
+.mini .e{color:var(--t-red)}
+.mini .cur{animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{background:transparent}}
+.wcta{display:flex;gap:10px;flex-wrap:wrap}
+@media (max-width:640px){.wsteps{grid-template-columns:1fr}.welcome{padding-block:14px 32px}}
+
 /* arcade / quiz / keys */
 .page{padding-block:28px 64px;display:flex;flex-direction:column;gap:20px}
 .page>header p{margin:6px 0 0;color:var(--muted);max-width:62ch}
@@ -1241,7 +1257,7 @@ const LESSONS = [
 
 /* ============================== progress ============================== */
 const KEY = 'viBootCamp.v1';
-let prog = { stars: {}, best: {}, li: 0, seen: {} };
+let prog = { stars: {}, best: {}, li: 0, seen: {}, welcomed: false };
 try { prog = Object.assign(prog, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(prog)); } catch (e) {} };
 const did = (li, ci) => `${LESSONS[li].id}-${ci}`;
@@ -1267,12 +1283,62 @@ function teardown() { if (P) { P.destroy(); P = null; } if (ARC) { clearInterval
 function render() {
   teardown();
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === state.view ? 'page' : 'false'));
-  ({ lessons: renderLessons, arcade: renderArcade, quiz: renderQuiz, keys: renderKeys })[state.view]();
+  ({ welcome: renderWelcome, lessons: renderLessons, arcade: renderArcade, quiz: renderQuiz, keys: renderKeys })[state.view]();
   updateRank();
 }
-function go(v) { state.view = v; if (location.hash.slice(1) !== v) history.replaceState(null, '', '#' + v); render(); window.scrollTo(0, 0); }
+function go(v) { if (state.view === 'welcome') markWelcomed(); state.view = v; if (location.hash.slice(1) !== v) history.replaceState(null, '', '#' + v); render(); window.scrollTo(0, 0); }
 document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => go(b.dataset.view)));
 window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (['lessons', 'arcade', 'quiz', 'keys'].includes(h) && h !== state.view) go(h); });
+
+/* ---------- first-visit welcome (shown once) ---------- */
+const WELCOME = [
+  () => `<p class="eyebrow">Welcome to viHung</p><h1 class="stitle">Stop getting stuck in vi.</h1><p class="big muted">A hands-on course for anyone who SSHes into a server and freezes when vi opens.</p>
+    <div class="mini" aria-hidden="true"><div class="mb">ssh deploy@web01</div><pre>Port 22
+PermitRootLogin yes<span class="cur"> </span>
+~
+<span class="e">E37: No write since last change (add ! to override)</span></pre></div>`,
+  () => `<p class="eyebrow">How it works</p><h2 class="stitle">Learn a little, then do it.</h2>
+    <ol class="wsteps"><li><span class="n">1</span><b>Learn</b><span>Short slides, one idea at a time. No walls of text.</span></li><li><span class="n">2</span><b>Practice</b><span>Type real vi keys in a simulated server terminal.</span></li><li><span class="n">3</span><b>Earn stars</b><span>Finish in fewer keys for more stars and a higher rank.</span></li></ol>`,
+  () => `<p class="eyebrow">Safe to experiment</p><h2 class="stitle">You can't break anything.</h2><p class="big">There is no real server and no real file. Make mistakes on purpose: a coach explains what went wrong and how to get out.</p><p class="big muted">${TOUCH ? 'On a phone, use the Esc, Enter and Ctrl buttons under the terminal. A keyboard makes it even easier.' : 'Keep your hands on the keyboard: → or Enter moves through slides, and the terminal takes real keys.'}</p>`,
+  () => `<p class="eyebrow">12 lessons · 46 drills · about 2 hours</p><h2 class="stitle">First up: how to get out of vi.</h2><p class="big muted">It is the one thing everybody needs first. Already comfortable? Pick any lesson instead.</p>
+    <div class="wcta"><button class="btn lg" id="wStart" type="button">Start lesson 1 →</button><button class="btn ghost lg" id="wPick" type="button">Let me pick a lesson</button></div>`,
+];
+let WI = 0;
+function markWelcomed() { if (!prog.welcomed) { prog.welcomed = true; save(); } }
+function renderWelcome(dir) {
+  const last = WELCOME.length - 1;
+  app.innerHTML = `<div class="welcome"><div class="deck">
+    <div class="dprog" aria-label="Intro ${WI + 1} of ${WELCOME.length}">${WELCOME.map((_, i) => `<i class="${i <= WI ? 'on' : ''}"></i>`).join('')}</div>
+    <section class="slide${dir < 0 ? ' rev' : ''}${WI === last ? ' s-go' : ''}" id="slide" aria-live="polite">${WELCOME[WI]()}</section>
+    <div class="dnav"><button class="btn ghost" id="dBack" type="button" ${WI === 0 ? 'disabled' : ''}>← Back</button><span class="dhint">${TOUCH ? 'Tap or swipe to continue' : 'Press → or Enter to continue'}</span>${WI === last ? '<span></span>' : '<button class="btn" id="dNext" type="button">Next →</button>'}</div>
+    ${WI < last ? '<button class="skip" id="dSkip" type="button">Skip intro</button>' : ''}</div></div>`;
+  $('#dBack').addEventListener('click', () => welcomeStep(-1));
+  $('#dNext') && $('#dNext').addEventListener('click', () => welcomeStep(1));
+  $('#dSkip') && $('#dSkip').addEventListener('click', () => finishWelcome(false));
+  $('#wStart') && $('#wStart').addEventListener('click', () => finishWelcome(false));
+  $('#wPick') && $('#wPick').addEventListener('click', () => finishWelcome(true));
+  const sl = $('#slide');
+  sl.addEventListener('click', e => { if (e.target.closest('button,a') || WI === last) return; welcomeStep(1); });
+  let x0 = null;
+  sl.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  sl.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (dx < -50) welcomeStep(1); else if (dx > 50) welcomeStep(-1); });
+}
+function welcomeStep(d) { const n = WI + d; if (n < 0 || n >= WELCOME.length) return; WI = n; renderWelcome(d); }
+function finishWelcome(pick) {
+  markWelcomed();
+  state.view = 'lessons'; history.replaceState(null, '', '#lessons');
+  if (pick) {
+    // Land on lesson 1's slides with the lesson list in view so they can choose.
+    openLesson(0);
+    const r = document.querySelector('.route'); if (r) { r.scrollIntoView({ block: 'start' }); r.querySelector('.ri')?.focus(); }
+  } else openLesson(0);
+}
+document.addEventListener('keydown', e => {
+  if (state.view !== 'welcome' || e.metaKey || e.altKey || e.ctrlKey) return;
+  if (e.target.closest && e.target.closest('button') && (e.key === 'Enter' || e.key === ' ')) return;
+  if (['ArrowRight', 'Enter', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); if (WI === WELCOME.length - 1) finishWelcome(false); else welcomeStep(1); }
+  else if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); welcomeStep(-1); }
+});
 
 function lessonStatus(i) {
   const l = LESSONS[i]; const got = l.drills.filter((_, c) => prog.stars[did(i, c)]).length;
@@ -1642,7 +1708,10 @@ function renderKeys() {
 }
 
 /* boot */
-(() => { const h = location.hash.slice(1); if (['lessons', 'arcade', 'quiz', 'keys'].includes(h)) state.view = h; state.ci = firstOpen(state.li); state.phase = prog.seen[LESSONS[state.li].id] ? 'practice' : 'learn'; render(); })();
+(() => { const h = location.hash.slice(1); if (['lessons', 'arcade', 'quiz', 'keys'].includes(h)) state.view = h;
+  // First visit only: someone with any saved progress has clearly been here before.
+  const returning = prog.welcomed || Object.keys(prog.stars).length || Object.keys(prog.seen).length;
+  if (!returning && (!h || h === 'lessons')) state.view = 'welcome'; state.ci = firstOpen(state.li); state.phase = prog.seen[LESSONS[state.li].id] ? 'practice' : 'learn'; render(); })();
 </script>
 </body>
 </html>

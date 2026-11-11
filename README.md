@@ -7,6 +7,7 @@ Try it now: <https://vi.hung.dev>
 
 ## What's inside
 
+- **First-visit intro.** New visitors see a short 4-slide welcome (what viHung is, how it works, that it's safe to experiment, then "Start lesson 1"). It shows once: finishing, skipping or switching tabs marks it as seen in `localStorage`, and anyone with saved progress or a deep link such as `#arcade` skips it.
 - **Learn, then practice.** Each lesson opens as a short slide deck: one idea or one key per slide, advanced with Next, → / Enter, a tap or a swipe. Key slides let you try the key on your keyboard, and a quick check must be answered correctly before moving on. Then a separate practice screen holds only the terminal and drills. Lessons you have already seen open straight to practice; "Review the concepts" goes back to the slides.
 - **12 lessons, 46 drills**, in order:
   1. Get out alive (`:q`, `:q!`, `Esc`)
