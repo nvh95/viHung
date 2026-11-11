@@ -1,0 +1,1336 @@
+<title>viHung - vi Boot Camp</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+/* Layout: lesson route on the left, a working "ssh session" as the centre of every lesson; terminal stays dark in both themes like a real one. */
+:root{
+  --bg:#ECEFF3; --surface:#FFFFFF; --sunk:#E3E8ED; --ink:#16202A; --muted:#566371; --line:#D2D9E0;
+  --accent:#B05C0C; --accent-soft:#F7E6D1; --on-accent:#FFFFFF;
+  --ok:#2A7A4B; --ok-soft:#DCF0E3; --bad:#B0372D; --bad-soft:#F8DDD9;
+  --t-bg:#0B1016; --t-bar:#141C25; --t-line:#243140; --t-fg:#D6DFE8; --t-dim:#4E5C6A; --t-amber:#F2A649; --t-green:#8FD18B; --t-red:#FF7B72; --t-blue:#7DB9FF;
+  --f-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1318; --surface:#161E26; --sunk:#1D2731; --ink:#E3E9EF; --muted:#97A5B3; --line:#283441;
+  --accent:#F0A24A; --accent-soft:#3B2B17; --on-accent:#1B1206;
+  --ok:#66C78D; --ok-soft:#173326; --bad:#F2786D; --bad-soft:#3C1F1B;
+  --t-bg:#080C11; --t-bar:#111820; --t-line:#26333F; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0E1318; --surface:#161E26; --sunk:#1D2731; --ink:#E3E9EF; --muted:#97A5B3; --line:#283441;
+  --accent:#F0A24A; --accent-soft:#3B2B17; --on-accent:#1B1206;
+  --ok:#66C78D; --ok-soft:#173326; --bad:#F2786D; --bad-soft:#3C1F1B;
+  --t-bg:#080C11; --t-bar:#111820; --t-line:#26333F; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+kbd{font:600 .82em var(--f-mono);background:var(--surface);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:.05em .4em;white-space:nowrap;color:var(--ink)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* top bar */
+.top{border-bottom:1px solid var(--line);background:var(--surface)}
+.top .wrap{display:flex;align-items:center;gap:16px 24px;flex-wrap:wrap;padding-block:12px}
+.brand{display:flex;align-items:center;gap:10px;font:800 20px var(--f-display)}
+.logo{font:700 14px var(--f-mono);background:var(--t-bg);color:var(--t-amber);padding:4px 8px;border-radius:6px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{border:0;background:none;padding:6px 12px;border-radius:999px;font-weight:500;color:var(--muted)}
+.tabs button[aria-current="page"]{background:var(--ink);color:var(--bg)}
+.tabs button:hover:not([aria-current="page"]){background:var(--sunk);color:var(--ink)}
+.rank{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted)}
+.rank b{color:var(--ink);font-weight:600}
+.bar{width:110px;height:6px;background:var(--sunk);border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:9px;transition:width .4s}
+
+/* lesson layout */
+.lx{display:grid;grid-template-columns:230px minmax(0,1fr);gap:32px;padding-block:28px 64px}
+.route{position:sticky;top:16px;align-self:start;display:flex;flex-direction:column}
+.route .rh{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 10px 34px}
+.ri{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;text-align:left;background:none;border:0;padding:6px 8px 6px 0;border-radius:8px;position:relative}
+.ri:not(:last-child)::before{content:"";position:absolute;left:11px;top:28px;bottom:-8px;width:2px;background:var(--line)}
+.ri .dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;font:600 11px var(--f-mono);color:var(--muted);position:relative;z-index:1}
+.ri.part .dot{border-color:var(--accent);color:var(--accent)}
+.ri.done .dot{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.ri .rt{font-weight:500;line-height:1.3;padding-top:2px}
+.ri .rs{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.ri[aria-current="true"] .rt{color:var(--accent)}
+.ri[aria-current="true"] .dot{box-shadow:0 0 0 4px var(--accent-soft)}
+.ri:hover .rt{text-decoration:underline}
+
+.lesson{min-width:0;display:flex;flex-direction:column;gap:22px}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:4px}
+.lesson h1{font-size:clamp(28px,4vw,40px);font-weight:800;line-height:1.1}
+.learn{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:24px;align-items:start}
+.intro p{margin:0 0 10px;max-width:62ch}
+.keys{margin:0;display:flex;flex-direction:column;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px}
+.keys div{display:grid;grid-template-columns:92px 1fr;gap:10px;padding:5px 6px;align-items:baseline}
+.keys div+div{border-top:1px solid var(--line)}
+.keys dt{margin:0}.keys dd{margin:0;font-size:14px;color:var(--muted)}
+.watch{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;background:var(--bad-soft);border-radius:10px;padding:12px 16px;align-items:baseline}
+.watch .wl{font-size:11px;text-transform:uppercase;letter-spacing:.09em;font-weight:600;color:var(--bad);white-space:nowrap}
+.watch p{margin:0;font-size:14px}
+
+.practice{border-top:1px solid var(--line);padding-top:20px;display:flex;flex-direction:column;gap:12px}
+.phead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.phead h2{font-size:22px}
+.drills{display:flex;gap:6px;flex-wrap:wrap}
+.drills button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;font:500 13px var(--f-body);display:flex;gap:6px;align-items:center}
+.drills button[aria-current="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.drills .st{color:var(--accent);letter-spacing:-1px;font-size:12px}
+.drills .st i{font-style:normal;color:var(--line)}
+.task{margin:0;font-size:16px;background:var(--accent-soft);border-radius:10px;padding:12px 16px;line-height:1.55}
+.task .tn{font:600 12px var(--f-mono);color:var(--accent);margin-right:8px;text-transform:uppercase}
+.pgrid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;align-items:start}
+.pmain{min-width:0;display:flex;flex-direction:column;gap:10px}
+.pside{display:flex;flex-direction:column;gap:12px;min-width:0}
+
+/* terminal */
+.tbox{position:relative;background:var(--t-bg);border-radius:12px;overflow:hidden;border:1px solid var(--t-line);color:var(--t-fg)}
+.tbar{display:flex;justify-content:space-between;align-items:center;background:var(--t-bar);padding:7px 12px;font:12px var(--f-mono);color:#8B99A7;border-bottom:1px solid var(--t-line)}
+.mode{font-weight:700;padding:2px 8px;border-radius:5px;background:#24303C;color:var(--t-fg);letter-spacing:.06em}
+.mode.m-insert{background:#1E3B23;color:var(--t-green)}
+.mode.m-normal{background:#3A2A13;color:var(--t-amber)}
+.mode.m-cmd,.mode.m-search{background:#1B2E46;color:var(--t-blue)}
+.screen{font:14px/1.5 var(--f-mono);padding:10px 0 0;overflow-x:auto;white-space:pre;tab-size:4}
+.row{min-height:1.5em;padding:0 14px}
+.row .dim{color:var(--t-dim)}
+.gut{color:var(--t-dim)}
+.cur{background:var(--t-amber);color:#120C04}
+.cur.ins{background:none;box-shadow:inset 2px 0 0 var(--t-amber);color:inherit}
+.tgt{background:rgba(242,166,73,.22);box-shadow:inset 0 0 0 1.5px var(--t-amber);border-radius:2px;animation:pulse 1.1s ease-in-out infinite}
+.cur.tgt{animation:none}
+.tgt2{box-shadow:inset 0 -2px 0 rgba(242,166,73,.45)}
+@keyframes pulse{50%{background:rgba(242,166,73,.45)}}
+.status{display:flex;justify-content:space-between;gap:16px;background:#121A23;margin-top:6px;padding-block:3px}
+.status .err{color:var(--t-red)}
+.status .ins{color:var(--t-green);font-weight:700}
+.status .sr{color:#8B99A7}
+.status .pend{color:var(--t-amber);margin-right:14px}
+.red{color:var(--t-red)}
+.flash{animation:flash .45s}
+@keyframes flash{0%{box-shadow:inset 0 0 0 3px var(--t-amber)}100%{box-shadow:inset 0 0 0 0 transparent}}
+.veil{position:absolute;inset:34px 0 0;border:0;background:rgba(8,12,17,.62);color:#fff;font:600 15px var(--f-body);display:grid;place-items:center;backdrop-filter:blur(1px)}
+.veil span{background:var(--t-amber);color:#120C04;padding:8px 16px;border-radius:999px}
+.win{position:absolute;inset:34px 0 0;background:rgba(8,12,17,.86);display:grid;place-items:center;padding:16px}
+.wcard{text-align:center;max-width:440px;display:flex;flex-direction:column;gap:8px;align-items:center}
+.wstars{font-size:34px;letter-spacing:4px;color:#36424E}
+.wstars .on{color:var(--t-amber)}
+.wcard h3{font-size:26px;color:#fff}
+.wkeys{margin:0;font:13px var(--f-mono);color:#A9B6C3}
+.wtip{margin:0;font-size:14px;color:#D6DFE8;background:#17212B;border-radius:8px;padding:8px 12px}
+.wtip kbd,.wcard kbd{background:#24303C;border-color:#3A4856;color:#fff}
+.wbtns{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;justify-content:center}
+
+.strip{display:flex;gap:4px;flex-wrap:wrap;min-height:28px;align-items:center}
+.strip .lbl{font-size:12px;color:var(--muted);margin-right:4px}
+.strip kbd{font-size:12px}
+.strip kbd:last-child{border-color:var(--accent);color:var(--accent)}
+.pad{display:flex;gap:6px;flex-wrap:wrap}
+.pad button{font:600 12px var(--f-mono);background:var(--surface);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:5px 10px}
+.pad button:active{transform:translateY(1px)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.glabel{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600;margin-bottom:6px}
+.meter{display:flex;justify-content:space-between;font:13px var(--f-mono);font-variant-numeric:tabular-nums}
+.meter b{font-weight:700}
+pre.want{margin:0;font:12px/1.55 var(--f-mono);background:var(--sunk);border-radius:6px;padding:8px 10px;overflow-x:auto}
+pre.want .diff{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.chips{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.chips li{display:flex;gap:8px;align-items:center;color:var(--muted)}
+.chips li::before{content:"";width:14px;height:14px;border-radius:4px;border:1.5px solid var(--line);flex:none}
+.chips li.ok{color:var(--ok);font-weight:500}
+.chips li.ok::before{background:var(--ok);border-color:var(--ok);box-shadow:inset 0 0 0 3px var(--surface)}
+.coach{border-left:3px solid var(--line)}
+.coach.alert{border-left-color:var(--bad);background:var(--bad-soft)}
+.coach.hint{border-left-color:var(--accent)}
+.coach h4{margin:0 0 4px;font:600 14px var(--f-body)}
+.coach p{margin:0;font-size:13.5px}
+.coach.bump{animation:bump .35s}
+@keyframes bump{30%{transform:translateX(-4px)}60%{transform:translateX(3px)}}
+.pbtns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;background:var(--accent);color:var(--on-accent);font-weight:600;padding:8px 14px;border-radius:8px}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.win .btn.ghost{color:#fff;border-color:#3A4856}
+.btn:hover{filter:brightness(1.07)}
+
+.popq{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.popq h3{font-size:18px;margin-bottom:10px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.opts button{text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font:500 14px var(--f-body)}
+.opts button.right{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.opts button.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.why{margin:10px 0 0;font-size:14px;color:var(--muted)}
+.lnav{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* arcade / quiz / keys */
+.page{padding-block:28px 64px;display:flex;flex-direction:column;gap:20px}
+.page>header p{margin:6px 0 0;color:var(--muted);max-width:62ch}
+.page h1{font-size:clamp(28px,4vw,38px);font-weight:800}
+.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.game{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.game[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.game b{font:700 18px var(--f-display)}
+.game span{font-size:14px;color:var(--muted)}
+.game small{font:12px var(--f-mono);color:var(--accent)}
+.hud{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.hud .card{display:flex;flex-direction:column;min-width:96px}
+.hud .card b{font:700 24px var(--f-mono);font-variant-numeric:tabular-nums}
+.hud .card span{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.hud .btn{align-self:center}
+.arena{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;align-items:start}
+.quiz{max-width:680px;display:flex;flex-direction:column;gap:14px}
+.quiz .qmeta{font:13px var(--f-mono);color:var(--muted)}
+.quiz h2{font-size:clamp(22px,3vw,28px);font-weight:600}
+.qform{display:flex;gap:8px;flex-wrap:wrap}
+.qform input{flex:1 1 220px;min-width:0;font:600 18px var(--f-mono);padding:10px 14px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
+.qform input:focus{outline:none;border-color:var(--accent)}
+.qfb{border-radius:10px;padding:12px 14px;font-size:15px}
+.qfb.ok{background:var(--ok-soft);color:var(--ok)}
+.qfb.no{background:var(--bad-soft);color:var(--bad)}
+.qfb p{margin:4px 0 0;color:var(--ink)}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+.kgrid section{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kgrid h2{font-size:17px;margin-bottom:8px}
+.kgrid .keys{border:0;padding:0;background:none}
+
+#cap{position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;resize:none;pointer-events:none}
+
+@media (max-width:980px){
+  .lx{grid-template-columns:1fr;gap:18px}
+  .route{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px}
+  .route .rh{display:none}
+  .ri{grid-template-columns:24px auto;padding:6px 10px 6px 6px;border:1px solid var(--line);background:var(--surface);flex:none}
+  .ri::before{display:none}
+  .ri .rs{display:none}
+  .pgrid,.arena{grid-template-columns:1fr}
+  .learn{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .screen{font-size:12px}
+  .rank .bar{display:none}
+  .watch{grid-template-columns:1fr}
+  .keys div{grid-template-columns:80px 1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="top"><div class="wrap">
+  <div class="brand"><span class="logo">:viHung</span>vi Boot Camp</div>
+  <nav class="tabs" aria-label="Sections">
+    <button data-view="lessons">Lessons</button>
+    <button data-view="arcade">Arcade</button>
+    <button data-view="quiz">Key quiz</button>
+    <button data-view="keys">Key card</button>
+  </nav>
+  <div class="rank"><span>Rank <b id="rankName">Trapped in vi</b></span><div class="bar"><i id="rankBar" style="width:0%"></i></div><span><b id="starCount">0</b> ★</span></div>
+</div></div>
+<main id="view" class="wrap"></main>
+<textarea id="cap" aria-label="vi keyboard input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
+
+<script>
+/* ============================== vi engine ============================== */
+const ROWS = 14;
+const cls = (c, big) => (c === undefined || c === ' ' || c === '\t' || c === '\n') ? 0 : (big ? 1 : (/\w/.test(c) ? 2 : 1));
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function wordFwd(t, o, big) {
+  const n = t.length; if (o >= n) return o; const start = o;
+  const c = cls(t[o], big);
+  if (c) while (o < n && cls(t[o], big) === c) o++;
+  while (o < n && cls(t[o], big) === 0) { if (t[o] === '\n' && o > start && t[o - 1] === '\n') break; o++; }
+  return o;
+}
+function wordEnd(t, o, big) {
+  const n = t.length; o++;
+  while (o < n && cls(t[o], big) === 0) o++;
+  if (o >= n) return Math.max(0, n - 1);
+  const c = cls(t[o], big);
+  while (o + 1 < n && cls(t[o + 1], big) === c) o++;
+  return o;
+}
+function wordBack(t, o, big) {
+  o--;
+  while (o > 0 && cls(t[o], big) === 0) { if (t[o] === '\n' && t[o - 1] === '\n') return o; o--; }
+  if (o <= 0) return 0;
+  const c = cls(t[o], big);
+  while (o > 0 && cls(t[o - 1], big) === c) o--;
+  return o;
+}
+
+class Vi {
+  constructor(term, path, text, o = {}) {
+    this.term = term; this.path = path; this.L = text.split('\n'); this.saved = text;
+    this.ro = !!o.ro; this.sudo = !!o.sudo; this.nu = !!o.nu;
+    this.cy = 0; this.cx = 0; this.want = 0; this.mode = 'normal'; this.pend = []; this.cmd = ''; this.sdir = '/';
+    this.msg = o.msg || ''; this.err = false; this.undo = []; this.redo = []; this.top = 0; this.typed = '';
+    this.lastSearch = null; this.reg = { text: '', lw: false }; this.ic = false;
+  }
+  get text() { return this.L.join('\n'); }
+  get dirty() { return this.text !== this.saved; }
+  say(m, err = false) { this.msg = m; this.err = err; }
+  snap() {
+    this.undo.push({ L: this.L.slice(), cy: this.cy, cx: this.cx }); this.redo = [];
+    if (this.undo.length > 300) this.undo.shift();
+    if (this.ro && !this.w10) { this.w10 = true; this.say('W10: Warning: Changing a readonly file', true); this.term.emit('readonly-edit'); }
+  }
+  setText(t) { this.L = t.split('\n'); }
+  off(y, x) { let o = 0; for (let i = 0; i < y; i++) o += this.L[i].length + 1; return o + x; }
+  pos(o) { let y = 0; while (y < this.L.length - 1 && o > this.L[y].length) { o -= this.L[y].length + 1; y++; } return { y, x: Math.max(0, Math.min(o, this.L[y].length)) }; }
+  fnb(y) { const l = this.L[y]; const m = l.search(/\S/); return m < 0 ? Math.max(0, l.length - 1) : m; }
+  clamp() {
+    this.cy = Math.max(0, Math.min(this.cy, this.L.length - 1));
+    const n = this.L[this.cy].length; const max = this.mode === 'insert' ? n : Math.max(0, n - 1);
+    this.cx = Math.max(0, Math.min(this.cx, max));
+  }
+  key(k) {
+    if (this.mode === 'insert') return this.insertKey(k);
+    if (this.mode === 'cmd' || this.mode === 'search') return this.cmdKey(k);
+    return this.normalKey(k);
+  }
+  normalKey(k) {
+    if (k === '<C-[>') k = '<Esc>';
+    if (!this.pend.length) this.say('');
+    if (k === '<Esc>') { this.pend = []; return; }
+    this.pend.push(k);
+    let r; try { r = this.run(this.pend); } catch (e) { console.error(e); r = 'bad'; }
+    if (r !== 'wait') this.pend = [];
+    if (this.term.vi === this || this.term.job === this) this.clamp();
+  }
+  run(p) {
+    let i = 0, c = '';
+    while (i < p.length && /^[0-9]$/.test(p[i]) && !(p[i] === '0' && !c)) c += p[i++];
+    if (i >= p.length) return 'wait';
+    const has = !!c, n = has ? +c : 1, k = p[i], rest = p.slice(i + 1);
+    if (k === 'd' || k === 'y' || k === 'c') {
+      let j = 0, c2 = '';
+      while (j < rest.length && /^[0-9]$/.test(rest[j]) && !(rest[j] === '0' && !c2)) c2 += rest[j++];
+      if (j >= rest.length) return 'wait';
+      const nn = n * (c2 ? +c2 : 1), has2 = has || !!c2;
+      let m = rest[j];
+      if (m === '<Esc>') return 'done';
+      if (m === k) { this.lines(k, this.cy, Math.min(this.L.length - 1, this.cy + nn - 1)); return 'done'; }
+      if (m === 'g') { if (rest.length < j + 2) return 'wait'; if (rest[j + 1] !== 'g') return 'bad'; m = 'gg'; }
+      return this.opMotion(k, m, nn, has2) ? 'done' : 'bad';
+    }
+    if (k === 'g') { if (!rest.length) return 'wait'; if (rest[0] === 'g') { this.moveTo(this.motion('gg', n, has)); return 'done'; } return 'bad'; }
+    if (k === 'r') { if (!rest.length) return 'wait'; return this.replaceChar(rest[0], n) ? 'done' : 'bad'; }
+    if (k === 'Z') { if (!rest.length) return 'wait'; if (rest[0] === 'Z') { this.exec('x'); return 'done'; } if (rest[0] === 'Q') { this.exec('q!'); return 'done'; } return 'bad'; }
+    const mot = this.motion(k, n, has);
+    if (mot !== undefined) { if (mot) this.moveTo(mot); return 'done'; }
+    const L = this.L;
+    switch (k) {
+      case 'x': case '<Del>': if (!L[this.cy].length) return 'bad'; this.opMotion('d', 'l', n, has); return 'done';
+      case 'X': if (this.cx === 0) return 'bad'; this.opMotion('d', 'h', n, has); return 'done';
+      case 'D': this.opMotion('d', '$', n, has); return 'done';
+      case 'C': this.opMotion('c', '$', n, has); return 'done';
+      case 's': this.opMotion('c', 'l', n, has); return 'done';
+      case 'S': this.lines('c', this.cy, Math.min(L.length - 1, this.cy + n - 1)); return 'done';
+      case 'Y': this.lines('y', this.cy, Math.min(L.length - 1, this.cy + n - 1)); return 'done';
+      case 'i': case '<Insert>': this.startInsert(); return 'done';
+      case 'a': this.startInsert(); if (L[this.cy].length) this.cx++; return 'done';
+      case 'I': this.startInsert(); this.cx = L[this.cy].search(/\S/) < 0 ? L[this.cy].length : L[this.cy].search(/\S/); return 'done';
+      case 'A': this.startInsert(); this.cx = L[this.cy].length; return 'done';
+      case 'o': this.snap(); L.splice(this.cy + 1, 0, ''); this.cy++; this.cx = 0; this.startInsert(false); return 'done';
+      case 'O': this.snap(); L.splice(this.cy, 0, ''); this.cx = 0; this.startInsert(false); return 'done';
+      case 'p': case 'P': this.put(k === 'P', n); return 'done';
+      case 'u': this.doUndo(n); return 'done';
+      case '<C-r>': this.doRedo(n); return 'done';
+      case 'J': this.join(); return 'done';
+      case '~': this.toggle(n); return 'done';
+      case ':': this.mode = 'cmd'; this.cmd = ''; return 'done';
+      case '/': case '?': this.mode = 'search'; this.sdir = k; this.cmd = ''; return 'done';
+      case '<C-c>': this.say('Type  :qa!  and press <Enter> to abandon all changes and exit Vim'); this.term.emit('ctrl-c'); return 'done';
+      case '<C-g>': this.say(`"${this.path}"${this.dirty ? ' [Modified]' : ''} ${L.length} lines --${Math.round((this.cy + 1) / L.length * 100)}%--`); return 'done';
+      case 'v': case 'V': case '<C-v>': this.say('Visual mode is not covered in this trainer'); return 'done';
+      case '.': this.say('Repeat (.) is not simulated in this trainer'); return 'done';
+    }
+    return 'bad';
+  }
+  motion(m, n, has, op) {
+    const L = this.L, y = this.cy, x = this.cx, last = L.length - 1;
+    switch (m) {
+      case 'h': case '<Left>': case '<BS>': if (x === 0 && !op) return null; return { y, x: Math.max(0, x - n) };
+      case 'l': case '<Right>': case ' ': return { y, x: Math.min(x + n, op ? L[y].length : Math.max(0, L[y].length - 1)) };
+      case 'j': case '<Down>': case '<C-n>': if (y === last && !op) return null; return { y: Math.min(last, y + n), x: 0, lw: true, vert: true };
+      case 'k': case '<Up>': case '<C-p>': if (y === 0 && !op) return null; return { y: Math.max(0, y - n), x: 0, lw: true, vert: true };
+      case '+': case '<CR>': { const yy = Math.min(last, y + n); return { y: yy, x: this.fnb(yy), lw: true }; }
+      case '-': { const yy = Math.max(0, y - n); return { y: yy, x: this.fnb(yy), lw: true }; }
+      case '0': case '<Home>': return { y, x: 0 };
+      case '^': return { y, x: this.fnb(y) };
+      case '$': case '<End>': { const yy = Math.min(last, y + n - 1); return { y: yy, x: Math.max(0, L[yy].length - 1), inc: true, eol: true }; }
+      case 'w': case 'W': { const t = this.text; let o = this.off(y, x); for (let i = 0; i < n; i++) o = wordFwd(t, o, m === 'W'); const p = this.pos(o); return { y: p.y, x: p.x }; }
+      case 'e': case 'E': { const t = this.text; let o = this.off(y, x); for (let i = 0; i < n; i++) o = wordEnd(t, o, m === 'E'); const p = this.pos(o); return { y: p.y, x: p.x, inc: true }; }
+      case 'b': case 'B': { const t = this.text; let o = this.off(y, x); for (let i = 0; i < n; i++) o = wordBack(t, o, m === 'B'); const p = this.pos(o); return { y: p.y, x: p.x }; }
+      case 'G': { const yy = has ? Math.min(last, n - 1) : last; return { y: yy, x: this.fnb(yy), lw: true }; }
+      case 'gg': { const yy = has ? Math.min(last, n - 1) : 0; return { y: yy, x: this.fnb(yy), lw: true }; }
+      case 'n': case 'N': return this.searchMotion(m === 'N', n);
+    }
+    return undefined;
+  }
+  moveTo(m) {
+    if (!m) return;
+    this.cy = m.y;
+    if (m.vert) { const len = this.L[m.y].length; this.cx = Math.min(this.want, Math.max(0, len - 1)); }
+    else { this.cx = m.x; this.want = m.eol ? Infinity : m.x; }
+    this.clamp();
+    if (!m.vert && !m.eol) this.want = this.cx;
+  }
+  opMotion(op, m, n, has) {
+    if (op === 'c' && (m === 'w' || m === 'W') && cls(this.L[this.cy][this.cx]) !== 0) m = m === 'w' ? 'e' : 'E';
+    const mot = this.motion(m, n, has, true);
+    if (!mot) return false;
+    if (mot.lw) { this.lines(op, Math.min(this.cy, mot.y), Math.max(this.cy, mot.y)); return true; }
+    let a = this.off(this.cy, this.cx), b = this.off(mot.y, mot.x);
+    if (b < a) [a, b] = [b, a];
+    if (mot.inc && this.L[mot.y].length > 0) b++;
+    if ((m === 'w' || m === 'W') && mot.y > this.cy) { b = this.off(mot.y - 1, this.L[mot.y - 1].length); if (b < a) b = a; }
+    const t = this.text, s = t.slice(a, b);
+    if (a === b) { if (op === 'c') this.startInsert(); return true; }
+    this.reg = { text: s, lw: false };
+    if (op === 'y') { const p = this.pos(a); this.cy = p.y; this.cx = p.x; return true; }
+    this.snap();
+    this.setText(t.slice(0, a) + t.slice(b));
+    const p = this.pos(a); this.cy = p.y; this.cx = p.x;
+    if (op === 'c') this.startInsert(false);
+    this.want = this.cx;
+    return true;
+  }
+  lines(op, a, b) {
+    const chunk = this.L.slice(a, b + 1); this.reg = { text: chunk.join('\n'), lw: true };
+    const cnt = b - a + 1;
+    if (op === 'y') { if (cnt > 2) this.say(cnt + ' lines yanked'); return; }
+    this.snap();
+    if (op === 'c') { this.L.splice(a, cnt, ''); this.cy = a; this.cx = 0; this.startInsert(false); return; }
+    this.L.splice(a, cnt); if (!this.L.length) this.L = [''];
+    this.cy = Math.min(a, this.L.length - 1); this.cx = this.fnb(this.cy); this.want = this.cx;
+    if (cnt > 2) this.say(cnt + ' fewer lines');
+  }
+  startInsert(snap = true) { if (snap) this.snap(); this.mode = 'insert'; this.typed = ''; if (!this.w10 || !this.err) this.say(''); }
+  put(before, n) {
+    const r = this.reg;
+    if (!r.text && !r.lw) { this.say('E353: Nothing in register "', true); return; }
+    this.snap();
+    if (r.lw) {
+      const ls = r.text.split('\n'); const add = []; for (let i = 0; i < n; i++) add.push(...ls);
+      const at = before ? this.cy : this.cy + 1; this.L.splice(at, 0, ...add); this.cy = at; this.cx = this.fnb(at);
+      if (add.length > 2) this.say(add.length + ' more lines');
+    } else {
+      const s = r.text.repeat(n), t = this.text; let o = this.off(this.cy, this.cx);
+      if (!before && this.L[this.cy].length) o++;
+      this.setText(t.slice(0, o) + s + t.slice(o)); const p = this.pos(o + s.length - 1); this.cy = p.y; this.cx = p.x;
+    }
+    this.want = this.cx;
+  }
+  doUndo(n) {
+    let c = 0;
+    while (c < n && this.undo.length) { const s = this.undo.pop(); this.redo.push({ L: this.L.slice(), cy: this.cy, cx: this.cx }); this.L = s.L; this.cy = s.cy; this.cx = s.cx; c++; }
+    this.say(c ? `${c} change${c > 1 ? 's' : ''} undone` : 'Already at oldest change');
+  }
+  doRedo(n) {
+    let c = 0;
+    while (c < n && this.redo.length) { const s = this.redo.pop(); this.undo.push({ L: this.L.slice(), cy: this.cy, cx: this.cx }); this.L = s.L; this.cy = s.cy; this.cx = s.cx; c++; }
+    this.say(c ? `${c} change${c > 1 ? 's' : ''} redone` : 'Already at newest change');
+  }
+  join() {
+    if (this.cy >= this.L.length - 1) return;
+    this.snap();
+    const a = this.L[this.cy].replace(/\s+$/, ''), b = this.L[this.cy + 1].replace(/^\s+/, '');
+    this.L[this.cy] = a + (b && a ? ' ' : '') + b; this.L.splice(this.cy + 1, 1); this.cx = a.length;
+  }
+  toggle(n) {
+    const l = this.L[this.cy]; if (!l.length) return; this.snap();
+    const e = Math.min(l.length, this.cx + n);
+    let s = ''; for (let i = this.cx; i < e; i++) { const c = l[i]; s += c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase(); }
+    this.L[this.cy] = l.slice(0, this.cx) + s + l.slice(e); this.cx = e;
+  }
+  replaceChar(c, n) {
+    if (c === '<Esc>') return true;
+    if (c.length !== 1) return false;
+    const l = this.L[this.cy]; if (this.cx + n > l.length) return false;
+    this.snap(); this.L[this.cy] = l.slice(0, this.cx) + c.repeat(n) + l.slice(this.cx + n); this.cx += n - 1; return true;
+  }
+  insertKey(k) {
+    const L = this.L;
+    if (k === '<Esc>' || k === '<C-[>' || k === '<C-c>') { this.mode = 'normal'; this.cx = Math.max(0, this.cx - 1); this.want = this.cx; this.clamp(); this.say(''); return; }
+    const line = L[this.cy];
+    if (k === '<CR>') {
+      if (/:(wq?|q!?|x)$/.test(this.typed)) this.term.emit('insert-cmd');
+      L[this.cy] = line.slice(0, this.cx); L.splice(this.cy + 1, 0, line.slice(this.cx)); this.cy++; this.cx = 0; this.typed = ''; return;
+    }
+    if (k === '<BS>') {
+      if (this.cx > 0) { L[this.cy] = line.slice(0, this.cx - 1) + line.slice(this.cx); this.cx--; }
+      else if (this.cy > 0) { const p = L[this.cy - 1]; this.cx = p.length; L[this.cy - 1] = p + line; L.splice(this.cy, 1); this.cy--; }
+      this.typed = this.typed.slice(0, -1); return;
+    }
+    if (k === '<Del>') { if (this.cx < line.length) L[this.cy] = line.slice(0, this.cx) + line.slice(this.cx + 1); else if (this.cy < L.length - 1) { L[this.cy] = line + L[this.cy + 1]; L.splice(this.cy + 1, 1); } return; }
+    if (k === '<Left>') { this.cx = Math.max(0, this.cx - 1); return; }
+    if (k === '<Right>') { this.cx = Math.min(line.length, this.cx + 1); return; }
+    if (k === '<Up>') { this.cy = Math.max(0, this.cy - 1); this.clamp(); return; }
+    if (k === '<Down>') { this.cy = Math.min(L.length - 1, this.cy + 1); this.clamp(); return; }
+    if (k === '<Home>') { this.cx = 0; return; }
+    if (k === '<End>') { this.cx = line.length; return; }
+    if (k === '<Tab>') k = '    ';
+    if (k.length === 1 || k === '    ') {
+      L[this.cy] = line.slice(0, this.cx) + k + line.slice(this.cx); this.cx += k.length;
+      this.typed = (this.typed + k).slice(-8);
+      if (/:(wq|q!|x)$/.test(this.typed)) this.term.emit('insert-cmd');
+    }
+  }
+  cmdKey(k) {
+    if (k === '<Esc>' || k === '<C-c>' || k === '<C-[>') { this.mode = 'normal'; this.cmd = ''; return; }
+    if (k === '<BS>') { if (!this.cmd) { this.mode = 'normal'; return; } this.cmd = this.cmd.slice(0, -1); return; }
+    if (k === '<CR>') {
+      const c = this.cmd, m = this.mode; this.mode = 'normal'; this.cmd = '';
+      if (m === 'cmd') this.exec(c); else this.doSearch(c, this.sdir);
+      if (this.term.vi === this) this.clamp(); return;
+    }
+    if (k.length === 1) this.cmd += k;
+  }
+  exec(raw) {
+    const c = raw.trim(); let m;
+    if (!c) return;
+    if (/^\d+$/.test(c)) { const y = Math.min(this.L.length - 1, Math.max(0, +c - 1)); this.cy = y; this.cx = this.fnb(y); return; }
+    if (c === '$') { this.cy = this.L.length - 1; this.cx = this.fnb(this.cy); return; }
+    if ((m = c.match(/^(w|write)(!)?(?:\s+(\S+))?$/))) { this.write(!!m[2], m[3]); return; }
+    if ((m = c.match(/^(q|quit|qa|qall|quita)(!)?$/))) { this.quit(!!m[2]); return; }
+    if ((m = c.match(/^(wq|wqa|x|xit|xa|exit)(!)?$/))) {
+      if (m[1][0] === 'x' || m[1] === 'exit') { if (!this.dirty) { this.term.closeVi(); return; } }
+      if (this.write(!!m[2])) this.term.closeVi(); return;
+    }
+    if ((m = c.match(/^se(?:t)?\s+(\S+)$/))) {
+      const o = m[1];
+      if (o === 'nu' || o === 'number') this.nu = true;
+      else if (o === 'nonu' || o === 'nonumber') this.nu = false;
+      else if (o === 'nu!' || o === 'invnu' || o === 'number!') this.nu = !this.nu;
+      else if (o === 'ic' || o === 'ignorecase') this.ic = true;
+      else if (o === 'noic' || o === 'noignorecase') this.ic = false;
+      else if (!/^(paste|nopaste|hls|hlsearch|nohls|list|nolist|ai|autoindent|noai|ruler|showmode|showcmd|syntax=\w+)$/.test(o)) this.say('E518: Unknown option: ' + o, true);
+      return;
+    }
+    if ((m = c.match(/^(%|\.|\d+(?:,\d+)?)?s\/((?:\\\/|[^\/])*)\/((?:\\\/|[^\/])*)(?:\/([gic]*))?$/))) { this.subst(m); return; }
+    if (c === 'noh' || c === 'nohlsearch' || c === 'syntax on') return;
+    if (/^h(elp)?\b/.test(c)) { this.say('No :help on this training box. The lessons are your manual.'); return; }
+    this.say('E492: Not an editor command: ' + c, true); this.term.emit('bad-cmd');
+  }
+  write(bang, name) {
+    const path = name || this.path; const f = this.term.fs[path];
+    if (this.ro && !bang && path === this.path) { this.say("E45: 'readonly' option is set (add ! to override)", true); this.term.emit('perm'); return false; }
+    if (f && f.root && !this.sudo) { this.say(`"${path}" E212: Can't open file for writing`, true); this.term.emit('perm'); return false; }
+    const t = this.text;
+    this.term.fs[path] = Object.assign({}, f || {}, { content: t });
+    if (path === this.path) this.saved = t;
+    this.say(`"${path}" ${f ? '' : '[New] '}${this.L.length}L, ${t.length + 1}B written`);
+    return true;
+  }
+  quit(bang) {
+    if (this.dirty && !bang) { this.say('E37: No write since last change (add ! to override)', true); this.term.emit('e37'); return; }
+    this.term.closeVi();
+  }
+  subst(m) {
+    let a = this.cy, b = this.cy;
+    if (m[1] === '%') { a = 0; b = this.L.length - 1; }
+    else if (m[1] && m[1] !== '.') { const [x, y] = m[1].split(',').map(Number); a = x - 1; b = (y || x) - 1; }
+    a = Math.max(0, a); b = Math.min(this.L.length - 1, b);
+    const pat = m[2].replace(/\\\//g, '/'); let rep = m[3].replace(/\\\//g, '/'); const fl = m[4] || '';
+    if (!pat) { this.say('E35: No previous regular expression', true); return; }
+    let re; try { re = new RegExp(pat, (fl.includes('g') ? 'g' : '') + (fl.includes('i') || this.ic ? 'i' : '')); } catch (e) { this.say('E486: Pattern not found: ' + pat, true); return; }
+    rep = rep.replace(/\$/g, '$$$$').replace(/(^|[^\\])&/g, '$1$$&').replace(/\\&/g, '&');
+    let subs = 0, lines = 0, lastY = -1; const next = this.L.slice();
+    for (let y = a; y <= b; y++) {
+      const mm = next[y].match(new RegExp(re.source, 'g' + (re.ignoreCase ? 'i' : '')));
+      if (!mm) continue;
+      const cnt = fl.includes('g') ? mm.length : 1; subs += cnt; lines++; lastY = y;
+      next[y] = next[y].replace(re, rep);
+    }
+    if (!subs) { this.say('E486: Pattern not found: ' + pat, true); return; }
+    this.snap(); this.L = next; this.cy = lastY; this.cx = this.fnb(lastY);
+    if (subs > 1) this.say(`${subs} substitutions on ${lines} line${lines > 1 ? 's' : ''}`);
+  }
+  doSearch(pat, dir) {
+    if (!pat) { if (!this.lastSearch) { this.say('E35: No previous regular expression', true); return; } pat = this.lastSearch.pat; }
+    this.lastSearch = { pat, back: dir === '?' };
+    const p = this.findMatch(pat, dir === '?', 1); if (p) this.moveTo(p);
+  }
+  findMatch(pat, back, n) {
+    let re; try { re = new RegExp(pat, 'gm' + (this.ic ? 'i' : '')); } catch (e) { re = new RegExp(pat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gm'); }
+    const t = this.text, all = []; let mm;
+    while ((mm = re.exec(t))) { all.push(mm.index); if (!mm[0].length) re.lastIndex++; if (all.length > 5000) break; }
+    if (!all.length) { this.say('E486: Pattern not found: ' + pat, true); return null; }
+    let o = this.off(this.cy, this.cx), wrapped = false;
+    for (let i = 0; i < n; i++) {
+      let nx;
+      if (!back) { nx = all.find(a => a > o); if (nx === undefined) { nx = all[0]; wrapped = true; } }
+      else { for (let j = all.length - 1; j >= 0; j--) if (all[j] < o) { nx = all[j]; break; } if (nx === undefined) { nx = all[all.length - 1]; wrapped = true; } }
+      o = nx;
+    }
+    this.say(wrapped ? (back ? 'search hit TOP, continuing at BOTTOM' : 'search hit BOTTOM, continuing at TOP') : (back ? '?' : '/') + pat, wrapped);
+    const p = this.pos(o); return { y: p.y, x: p.x };
+  }
+  searchMotion(rev, n) {
+    if (!this.lastSearch) { this.say('E35: No previous regular expression', true); return null; }
+    return this.findMatch(this.lastSearch.pat, this.lastSearch.back !== rev, n);
+  }
+}
+
+/* ============================== fake server shell ============================== */
+class Term {
+  constructor(files, onEvent) {
+    this.fs = {}; for (const [p, f] of Object.entries(files)) this.fs[p] = Object.assign({}, f);
+    this.out = []; this.input = ''; this.hist = []; this.hidx = -1;
+    this.vi = null; this.job = null; this.prompt = null; this.frozen = false; this.queue = [];
+    this.keylog = []; this.onEvent = onEvent || (() => {}); this.burst = { n: 0, t: 0 }; this.nu = false;
+  }
+  emit(e) { this.onEvent(e); }
+  get ps1() { return 'deploy@web01:~$ '; }
+  key(k, caps) {
+    this.keylog.push(k);
+    if (this.frozen) {
+      if (k === '<C-q>') { this.frozen = false; const q = this.queue; this.queue = []; q.forEach(x => this.key2(x)); this.emit(q.length ? 'unfrozen' : 'unfrozen0'); }
+      else { this.queue.push(k); this.emit('frozen-key'); }
+      return;
+    }
+    if (k === '<C-s>') { this.frozen = true; this.emit('ctrl-s'); return; }
+    if (k === '<C-q>') return;
+    this.key2(k, caps);
+  }
+  key2(k, caps) {
+    if (this.prompt) return this.promptKey(k);
+    if (this.vi) {
+      const v = this.vi;
+      if (k === '<C-z>' && v.mode === 'normal') { this.suspend(); return; }
+      if (v.mode === 'normal') { this.detectTyping(k); if (caps && /^[A-Z]$/.test(k)) this.emit('caps'); }
+      v.key(k); return;
+    }
+    this.shellKey(k);
+  }
+  detectTyping(k) {
+    const now = performance.now();
+    const typing = /^[a-zA-Z ,.'!?]$/.test(k) && !'hjklwbeWBExunNpPGg0$'.includes(k);
+    if (typing && now - this.burst.t < 900) this.burst.n++; else this.burst.n = typing ? 1 : 0;
+    this.burst.t = now;
+    if (this.burst.n >= 4) { this.emit('normal-typing'); this.burst.n = 0; }
+  }
+  suspend() {
+    this.job = this.vi; this.vi = null;
+    this.out.push('', `[1]+  Stopped                 vi ${this.job.path}`);
+    this.emit('ctrl-z');
+  }
+  openVi(path, sudo) {
+    path = path.replace(/^\.\//, '').replace(/^~\//, '');
+    const f = this.fs[path];
+    const swap = (f && f.swap) || (this.job && this.job.path === path);
+    const go = ro => {
+      const text = f ? f.content : '';
+      const isRo = ro || !!(f && f.root && !sudo);
+      const info = f ? `"${path}"${isRo ? ' [readonly]' : ''} ${text.split('\n').length}L, ${text.length + 1}B` : `"${path}" [New]`;
+      this.vi = new Vi(this, path, text, { ro: isRo, sudo, nu: this.nu, msg: info });
+      if (f && f.root && !sudo) this.emit('opened-ro');
+    };
+    if (swap) { this.prompt = { path, go }; this.emit('swap'); return; }
+    go(false);
+  }
+  promptKey(k) {
+    const c = k.length === 1 ? k.toLowerCase() : k, p = this.prompt;
+    if (c === 'o') { this.prompt = null; p.go(true); }
+    else if (c === 'e' || c === 'r') { this.prompt = null; p.go(false); if (c === 'r') this.vi.say('Recovery completed. Check the text, then :w to keep it.'); }
+    else if (c === 'd') { if (this.fs[p.path]) this.fs[p.path].swap = false; this.prompt = null; p.go(false); }
+    else if (c === 'q' || c === 'a' || c === '<Esc>' || c === '<C-c>') { this.prompt = null; }
+  }
+  closeVi() { this.vi = null; }
+  shellKey(k) {
+    if (k === '<CR>') { const cmd = this.input; this.out.push(this.ps1 + cmd); this.input = ''; if (cmd.trim()) this.hist.push(cmd); this.hidx = -1; this.runCmd(cmd.trim()); return; }
+    if (k === '<BS>') { this.input = this.input.slice(0, -1); return; }
+    if (k === '<C-c>') { this.out.push(this.ps1 + this.input + '^C'); this.input = ''; return; }
+    if (k === '<C-l>') { this.out = []; return; }
+    if (k === '<Up>') { if (!this.hist.length) return; this.hidx = this.hidx < 0 ? this.hist.length - 1 : Math.max(0, this.hidx - 1); this.input = this.hist[this.hidx]; return; }
+    if (k === '<Down>') { if (this.hidx < 0) return; this.hidx++; if (this.hidx >= this.hist.length) { this.hidx = -1; this.input = ''; } else this.input = this.hist[this.hidx]; return; }
+    if (k === '<Esc>') { this.emit('esc-shell'); return; }
+    if (k === '<Tab>') { const m = this.input.match(/(\S+)$/); if (m) { const hit = Object.keys(this.fs).find(p => p.startsWith(m[1])); if (hit) this.input = this.input.slice(0, -m[1].length) + hit; } return; }
+    if (k.length === 1) this.input += k;
+  }
+  runCmd(c) {
+    if (!c) return;
+    const parts = c.split(/\s+/); let sudo = false;
+    if (parts[0] === 'sudo') { sudo = true; parts.shift(); if (!parts.length) { this.out.push('usage: sudo command'); return; } }
+    const [cmd, ...args] = parts; const norm = p => p.replace(/^\.\//, '').replace(/^~\//, '');
+    switch (cmd) {
+      case 'vi': case 'vim': case 'view':
+        if (!args[0]) { this.out.push('(trainer) Give vi a file name, for example: vi notes.txt'); return; }
+        this.openVi(args[0], sudo); return;
+      case 'nano': case 'emacs': case 'pico': this.out.push(`bash: ${cmd}: command not found`); this.emit('nano'); return;
+      case 'fg':
+        if (this.job) { this.vi = this.job; this.job = null; this.out.push('vi ' + this.vi.path); } else this.out.push('bash: fg: current: no such job'); return;
+      case 'jobs': if (this.job) this.out.push(`[1]+  Stopped                 vi ${this.job.path}`); return;
+      case 'cat': {
+        const f = this.fs[norm(args[0] || '')];
+        if (!args[0]) return; if (!f) { this.out.push(`cat: ${args[0]}: No such file or directory`); return; }
+        this.out.push(...f.content.split('\n')); return;
+      }
+      case 'ls': this.out.push(Object.keys(this.fs).join('   ')); return;
+      case 'clear': this.out = []; return;
+      case 'whoami': this.out.push(sudo ? 'root' : 'deploy'); return;
+      case 'pwd': this.out.push('/home/deploy'); return;
+      case 'exit': case 'logout':
+        if (this.job) { this.out.push('There are stopped jobs.'); this.emit('stopped-exit'); }
+        else this.out.push('(trainer) Staying connected so you can keep practising.'); return;
+      default: this.out.push(`bash: ${cmd}: command not found`);
+    }
+  }
+}
+
+/* ============================== rendering ============================== */
+function renderTerm(t, tg) {
+  if (t.prompt) return renderPrompt(t);
+  if (t.vi) return renderVi(t.vi, tg);
+  return renderShell(t);
+}
+function renderVi(v, tg) {
+  const R = ROWS;
+  if (v.cy < v.top) v.top = v.cy;
+  if (v.cy >= v.top + R) v.top = v.cy - R + 1;
+  if (v.top > Math.max(0, v.L.length - 1)) v.top = Math.max(0, v.L.length - R);
+  const gw = String(v.L.length).length + 1;
+  const showCur = v.mode === 'normal' || v.mode === 'insert';
+  const rows = [];
+  for (let r = 0; r < R; r++) {
+    const y = v.top + r;
+    if (y >= v.L.length) { rows.push('<div class="row"><span class="dim">~</span></div>'); continue; }
+    const line = v.L[y]; let h = v.nu ? `<span class="gut">${String(y + 1).padStart(gw)} </span>` : '';
+    let n = Math.max(line.length, (showCur && y === v.cy) ? v.cx + 1 : 0);
+    if (tg && tg.cur && tg.cur[0] === y) n = Math.max(n, tg.cur[1] + 1);
+    let run = '';
+    for (let x = 0; x < n; x++) {
+      const c = line[x] ?? ' '; let k = '';
+      if (showCur && y === v.cy && x === v.cx) k = v.mode === 'insert' ? 'cur ins' : 'cur';
+      if (tg) { if (tg.cur && tg.cur[0] === y && tg.cur[1] === x) k += ' tgt'; else if (tg.rest && tg.rest.some(p => p[0] === y && p[1] === x)) k += ' tgt2'; }
+      if (k) { h += esc(run) + `<span class="${k.trim()}">${esc(c)}</span>`; run = ''; } else run += c;
+    }
+    h += esc(run);
+    rows.push(`<div class="row">${h}</div>`);
+  }
+  let left = '';
+  if (v.mode === 'insert') left = v.err && v.msg ? `<span class="err">${esc(v.msg)}</span>` : '<span class="ins">-- INSERT --</span>';
+  else if (v.mode === 'cmd') left = ':' + esc(v.cmd) + '<span class="cur"> </span>';
+  else if (v.mode === 'search') left = esc(v.sdir + v.cmd) + '<span class="cur"> </span>';
+  else if (v.msg) left = `<span class="${v.err ? 'err' : ''}">${esc(v.msg)}</span>`;
+  const len = v.L.length;
+  const pct = len <= R ? 'All' : v.top === 0 ? 'Top' : v.top + R >= len ? 'Bot' : Math.round(v.top / (len - R) * 100) + '%';
+  const right = `<span class="pend">${esc(v.pend.join(''))}</span>${v.cy + 1},${v.cx + 1}&nbsp;&nbsp;&nbsp;${pct}`;
+  return rows.join('') + `<div class="row status"><span class="sl">${left || ' '}</span><span class="sr">${right}</span></div>`;
+}
+function renderShell(t) {
+  const rows = t.out.slice(-ROWS).map(l => `<div class="row">${esc(l)}</div>`);
+  rows.push(`<div class="row">${esc(t.ps1 + t.input)}<span class="cur"> </span></div>`);
+  while (rows.length < ROWS + 1) rows.push('<div class="row"></div>');
+  return rows.join('');
+}
+function renderPrompt(t) {
+  const p = t.prompt.path, base = p.split('/').pop();
+  const ls = ['E325: ATTENTION', `Found a swap file by the name ".${base}.swp"`, '          owned by: deploy   dated: Tue Nov 10 22:14:03 2026',
+    `         file name: ~deploy/${p}`, '          modified: YES', '         user name: deploy   host name: web01', '        process ID: 21877',
+    `While opening file "${p}"`, '', '(1) Another program may be editing the same file.', '(2) An edit session for this file crashed.', '',
+    `Swap file ".${base}.swp" already exists!`];
+  const rows = t.out.slice(-1).map(l => `<div class="row">${esc(l)}</div>`);
+  ls.forEach((l, i) => rows.push(`<div class="row${i === 0 ? ' red' : ''}">${esc(l)}</div>`));
+  rows.push(`<div class="row">[O]pen Read-Only, (E)dit anyway, (R)ecover, (D)elete it, (Q)uit, (A)bort: <span class="cur"> </span></div>`);
+  return rows.join('');
+}
+const KEYLABEL = { '<Esc>': 'Esc', '<CR>': 'Enter', '<BS>': 'Bksp', '<Tab>': 'Tab', ' ': 'Space', '<Left>': '←', '<Right>': '→', '<Up>': '↑', '<Down>': '↓', '<Del>': 'Del' };
+const keyLabel = k => KEYLABEL[k] || (k.startsWith('<C-') ? 'Ctrl-' + k[3].toUpperCase() : k);
+
+/* ============================== player ============================== */
+const H = {
+  cur: t => t.vi ? t.vi.text : t.job ? t.job.text : null,
+  file: (t, p) => t.fs[p] ? t.fs[p].content : undefined,
+  closed: t => !t.vi && !t.job && !t.prompt && !t.frozen,
+  normal: t => !!t.vi && t.vi.mode === 'normal' && !t.frozen && !t.prompt,
+};
+const chPath = ch => ch.path || ch.file || 'notes.txt';
+function buildTerm(ch, onEvent) {
+  const path = chPath(ch);
+  const files = ch.files ? JSON.parse(JSON.stringify(ch.files)) : { [path]: { content: ch.content ?? '', root: !!ch.root, swap: !!ch.swap } };
+  const t = new Term(files, onEvent); t.nu = !!ch.nu;
+  const start = ch.start || 'vi';
+  if (start === 'shell') {
+    t.out.push('Welcome to Ubuntu 24.04.1 LTS (GNU/Linux 6.8.0-45-generic x86_64)', '', 'Last login: Tue Nov 10 22:13:51 2026 from 10.8.0.14');
+    if (ch.ls !== false) { t.out.push(t.ps1 + 'ls'); t.out.push(Object.keys(t.fs).join('   ')); }
+    return t;
+  }
+  t.out.push(t.ps1 + (ch.sudo ? 'sudo vi ' : 'vi ') + path);
+  const quiet = t.onEvent; t.onEvent = () => {};
+  t.openVi(path, ch.sudo);
+  const v = t.vi;
+  if (ch.cy != null) v.cy = ch.cy; if (ch.cx != null) v.cx = ch.cx; v.want = v.cx;
+  if (ch.pre) ch.pre(v);
+  if (start === 'insert') { v.mode = 'insert'; v.msg = ''; }
+  if (start === 'stopped') t.suspend();
+  if (start === 'frozen') t.frozen = true;
+  t.onEvent = quiet;
+  return t;
+}
+
+let ACTIVE = null; const cap = document.getElementById('cap'); let capFocused = false;
+function focusPlayer(p) { ACTIVE = p; try { cap.focus({ preventScroll: true }); } catch (e) { cap.focus(); } refreshVeils(); }
+const LIVE = new Set();
+function refreshVeils() { LIVE.forEach(p => { p.$veil.hidden = (ACTIVE === p && capFocused) || p.won || p.ended; }); }
+
+class Player {
+  constructor(el, ch, opt = {}) {
+    this.el = el; this.ch = ch; this.opt = opt;
+    el.innerHTML = `<div class="tbox"><div class="tbar"><span>ssh deploy@web01</span><span class="mode"></span></div><div class="screen"></div><button type="button" class="veil"><span>Click here, then type on your keyboard</span></button><div class="win" hidden></div></div><div class="strip" aria-live="off"></div>`;
+    this.$box = el.querySelector('.tbox'); this.$screen = el.querySelector('.screen'); this.$mode = el.querySelector('.mode');
+    this.$veil = el.querySelector('.veil'); this.$win = el.querySelector('.win'); this.$strip = el.querySelector('.strip');
+    this.$box.addEventListener('mousedown', e => { if (e.target.closest('.win')) return; e.preventDefault(); focusPlayer(this); });
+    this.$box.addEventListener('touchend', e => { if (e.target.closest('.win')) return; focusPlayer(this); });
+    this.$win.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.a === 'retry') { this.reset(); focusPlayer(this); } else this.opt.onNext && this.opt.onNext(); });
+    this.check = this.mkCheck(ch);
+    LIVE.add(this); this.reset();
+  }
+  mkCheck(ch) {
+    if (ch.check) return ch.check; const p = chPath(ch);
+    if (ch.saveQuit) return t => H.closed(t) && H.file(t, p) === ch.want;
+    if (ch.want != null) return t => H.normal(t) && H.cur(t) === ch.want;
+    return () => false;
+  }
+  reset() {
+    this.term = buildTerm(this.ch, e => this.opt.onEvent && this.opt.onEvent(e, this));
+    this.keys = 0; this.ti = 0; this.won = false; this.hint = false; this.locked = !!this.opt.startLocked; this.ended = false;
+    this.$win.hidden = true; this.opt.onReset && this.opt.onReset(this); this.render(); refreshVeils();
+  }
+  destroy() { LIVE.delete(this); if (ACTIVE === this) ACTIVE = null; }
+  tinfo() {
+    if (this.opt.target) return { cur: this.opt.target(this) };
+    const ts = this.ch.targets; if (!ts) return null;
+    return { cur: ts[this.ti], rest: ts.slice(this.ti + 1) };
+  }
+  key(k, caps) {
+    if (this.won) { if (k === '<CR>') this.opt.onNext && this.opt.onNext(); return; }
+    if (this.locked) return;
+    this.keys++; this.term.key(k, caps); this.after();
+  }
+  after() {
+    const t = this.term, v = t.vi, ti = this.tinfo();
+    if (ti && ti.cur && v && v.mode === 'normal' && !v.pend.length && !t.frozen && v.cy === ti.cur[0] && v.cx === ti.cur[1]) {
+      if (this.opt.onHit) this.opt.onHit(this); else this.ti++;
+      this.$box.classList.remove('flash'); void this.$box.offsetWidth; this.$box.classList.add('flash');
+    }
+    this.opt.onAfter && this.opt.onAfter(this);
+    if (!this.opt.noCheck) {
+      const ok = this.ch.targets ? this.ti >= this.ch.targets.length : this.check(t);
+      if (ok) this.win();
+    }
+    this.render();
+  }
+  win() {
+    this.won = true;
+    const par = this.ch.par || 1; let s = this.keys <= par ? 3 : this.keys <= par * 2 ? 2 : 1; if (this.hint) s = Math.min(s, 2);
+    this.stars = s; this.opt.onWin && this.opt.onWin(this, s);
+    this.$win.hidden = false;
+    this.$win.innerHTML = `<div class="wcard"><div class="wstars">${[1, 2, 3].map(i => `<span class="${i <= s ? 'on' : ''}">★</span>`).join('')}</div><h3>${['', 'Cleared', 'Nice work', 'Perfect'][s]}</h3><p class="wkeys">${this.keys} key${this.keys === 1 ? '' : 's'} · par ${par}${this.hint ? ' · hint used' : ''}</p>${this.ch.tip ? `<p class="wtip">${this.ch.tip}</p>` : ''}${s < 3 && !this.hint ? `<p class="wkeys">Hit par or under for 3 stars.</p>` : ''}<div class="wbtns"><button class="btn ghost" data-a="retry">Retry</button><button class="btn" data-a="next">${this.opt.nextLabel ? this.opt.nextLabel() : 'Next'} · Enter</button></div></div>`;
+    refreshVeils();
+  }
+  render() {
+    const t = this.term;
+    this.$screen.innerHTML = renderTerm(t, this.tinfo());
+    let m = 'SHELL', mc = 'shell';
+    if (t.prompt) { m = 'PROMPT'; mc = 'cmd'; }
+    else if (t.vi) { mc = t.vi.mode; m = { normal: 'NORMAL', insert: 'INSERT', cmd: 'COMMAND', search: 'SEARCH' }[t.vi.mode]; }
+    this.$mode.textContent = m; this.$mode.className = 'mode m-' + mc;
+    const ks = t.keylog.slice(-14);
+    this.$strip.innerHTML = ks.length ? `<span class="lbl">You pressed</span>` + ks.map(k => `<kbd>${esc(keyLabel(k))}</kbd>`).join('') : `<span class="lbl">Keys you press show up here.</span>`;
+    this.opt.onRender && this.opt.onRender(this);
+  }
+}
+
+/* keyboard capture */
+function keyName(e) {
+  if (e.metaKey || e.altKey) return null;
+  const map = { Escape: '<Esc>', Enter: '<CR>', Backspace: '<BS>', Tab: '<Tab>', ArrowLeft: '<Left>', ArrowRight: '<Right>', ArrowUp: '<Up>', ArrowDown: '<Down>', Delete: '<Del>', Home: '<Home>', End: '<End>' };
+  if (map[e.key]) return map[e.key];
+  if (e.ctrlKey) { if (e.key === '[') return '<Esc>'; if (/^[a-z]$/i.test(e.key)) return '<C-' + e.key.toLowerCase() + '>'; return null; }
+  if (e.key.length === 1) return e.key;
+  return null;
+}
+cap.addEventListener('keydown', e => {
+  if (!ACTIVE || e.isComposing) return;
+  const k = keyName(e); if (!k) return;
+  e.preventDefault();
+  ACTIVE.key(k, e.getModifierState && e.getModifierState('CapsLock'));
+});
+cap.addEventListener('input', () => { const v = cap.value; cap.value = ''; if (!ACTIVE) return; for (const c of v) ACTIVE.key(c === '\n' ? '<CR>' : c); });
+cap.addEventListener('focus', () => { capFocused = true; refreshVeils(); });
+cap.addEventListener('blur', () => { capFocused = false; refreshVeils(); });
+document.addEventListener('mousedown', e => { if (e.target.closest('[data-k]')) e.preventDefault(); });
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-k]'); if (!b || !ACTIVE) return;
+  ACTIVE.key(b.dataset.k); if (matchMedia('(pointer:fine)').matches) focusPlayer(ACTIVE);
+});
+const PAD = [['<Esc>', 'Esc'], ['<CR>', 'Enter'], ['<BS>', '⌫'], ['<C-r>', 'Ctrl-R'], ['<C-s>', 'Ctrl-S'], ['<C-q>', 'Ctrl-Q'], ['<C-z>', 'Ctrl-Z']];
+const padHTML = () => `<div class="pad" aria-label="Special keys">${PAD.map(([k, l]) => `<button type="button" data-k="${k}">${l}</button>`).join('')}</div>`;
+
+/* ============================== coaching ============================== */
+const COACH = {
+  'e37': ['vi will not quit: unsaved changes', 'E37 means the file changed since the last save. Choose: <kbd>:wq</kbd> saves and quits, <kbd>:q!</kbd> throws the changes away.'],
+  'perm': ['You can\'t save this file', 'It belongs to root and you opened it without sudo. Quit with <kbd>:q!</kbd>, then run <kbd>sudo vi &lt;file&gt;</kbd>. Big edits you don\'t want to lose? Save a copy first: <kbd>:w /tmp/copy</kbd>.'],
+  'opened-ro': ['Opened read-only', 'The status line says <b>[readonly]</b>: this is a root file and you are not root. Quit now with <kbd>:q</kbd> and reopen with <kbd>sudo vi</kbd> before you start editing.'],
+  'readonly-edit': ['W10: changing a read-only file', 'You can type, but you will not be able to save. Stop here: <kbd>Esc</kbd> <kbd>:q!</kbd>, then reopen with sudo.'],
+  'ctrl-s': ['Screen frozen', 'Ctrl-S pauses terminal output (old flow control). vi is still running and everything you type is queued. Press <kbd>Ctrl-Q</kbd> to unfreeze.'],
+  'frozen-key': ['Nothing on screen is changing?', 'The terminal is paused (someone pressed Ctrl-S). Keys you type are being queued and will all run at once. Press <kbd>Ctrl-Q</kbd>.'],
+  'unfrozen': ['Unfrozen, and the queued keys just ran', 'Everything you typed while frozen was replayed. Check the screen; press <kbd>u</kbd> if something unexpected happened.'],
+  'unfrozen0': ['Unfrozen', 'The terminal is live again. Carry on.'],
+  'ctrl-z': ['vi was suspended, not closed', 'Ctrl-Z sent vi to the background. Your unsaved edits are still inside it. Type <kbd>fg</kbd> and press Enter to bring it back.'],
+  'ctrl-c': ['Ctrl-C does not quit vi', 'Use <kbd>:q</kbd>, or <kbd>:q!</kbd> to discard changes.'],
+  'normal-typing': ['You are typing in NORMAL mode', 'In Normal mode letters are commands (o opens a line, d deletes, x cuts). Press <kbd>u</kbd> to undo any damage, then <kbd>i</kbd> before typing text.'],
+  'insert-cmd': ['That command went into the file', 'You typed a <kbd>:</kbd> command while in INSERT mode, so it became text. Press <kbd>Esc</kbd>, remove those characters (<kbd>u</kbd> undoes the whole insert), then type the command.'],
+  'caps': ['Caps Lock is on', 'vi is case-sensitive. <kbd>J</kbd> joins lines, <kbd>U</kbd> and <kbd>K</kbd> do other things. Turn Caps Lock off.'],
+  'swap': ['E325: a swap file already exists', 'vi keeps a <b>.swp</b> file while editing. A leftover one means another session is editing, or an earlier one crashed or was closed. If nobody else is editing: <kbd>E</kbd> edits anyway, <kbd>D</kbd> deletes the stale swap file, <kbd>Q</kbd> backs out.'],
+  'nano': ['No nano on this box', 'Plenty of minimal servers only ship vi. That is the reason to learn it.'],
+  'stopped-exit': ['There are stopped jobs', 'A suspended vi is still waiting. Type <kbd>fg</kbd> to go back to it.'],
+  'esc-shell': ['You are at the shell prompt', 'vi isn\'t open right now. Start it with <kbd>vi &lt;file&gt;</kbd>.'],
+  'bad-cmd': ['Unknown : command', 'vi did not recognise that. Check for typos. The common ones are <kbd>:w</kbd> <kbd>:q</kbd> <kbd>:wq</kbd> <kbd>:q!</kbd>.'],
+  'surgeon-oops': ['A good line was deleted', 'Only the XXX lines should go. Press <kbd>u</kbd> to bring the good line back.'],
+};
+
+/* ============================== content helpers ============================== */
+const lines = a => a.join('\n');
+const colOf = (line, word, nth = 1) => { let i = -1; for (let k = 0; k < nth; k++) i = line.indexOf(word, i + 1); return i; };
+const lineOf = (text, s, nth = 1) => { const ls = text.split('\n'); let c = 0; for (let i = 0; i < ls.length; i++) if (ls[i].includes(s) && ++c === nth) return i; return -1; };
+
+const MOTD = lines(['Welcome to web01 (Ubuntu 24.04 LTS)', 'Maintenance window: Sunday 02:00-04:00 UTC', 'On-call: #ops-pager']);
+const FSTAB = [['# <device>', '<mount>', '<type>', '<options>', '<dump>', '<pass>'], ['UUID=3f2a-11c9', '/', 'ext4', 'defaults', '0', '1'], ['UUID=9b7e-4d02', '/boot', 'ext4', 'defaults', '0', '2'], ['UUID=77aa-0c3e', 'none', 'swap', 'sw', '0', '0'], ['tmpfs', '/tmp', 'tmpfs', 'noexec', '0', '0'], ['/dev/sdb1', '/data', 'xfs', 'noatime', '0', '2'], ['//nas/share', '/mnt/nas', 'cifs', '_netdev', '0', '0']]
+  .map(r => r[0].padEnd(17) + r[1].padEnd(15) + r[2].padEnd(8) + r[3].padEnd(11) + r[4].padEnd(7) + r[5]).join('\n');
+const LOG = Array.from({ length: 13 }, (_, i) => `Nov 11 08:${String(10 + i * 3).padStart(2, '0')}:4${i % 10} web01 ${['nginx[812]', 'sshd[1203]', 'cron[655]', 'kernel'][i % 4]}: ${['GET /health 200', 'Accepted publickey for deploy', '(root) CMD (backup.sh)', 'eth0: link up', 'GET /api/orders 200', 'Disconnected from 10.8.0.14', '(root) CMD (rotate-logs.sh)', 'TCP: request_sock_TCP: Possible SYN flooding', 'GET /api/cart 502', 'Failed password for invalid user admin', '(deploy) CMD (sync.sh)', 'EXT4-fs (sdb1): mounted', 'GET /login 200'][i]}`).join('\n');
+const NGX = lines(['server {', '    listen 80;', '    server_name shop.example.com;', '    root /var/www/shop/public;', '    # allow office and vpn ranges only', '    location /admin/ {', '        allow 10.8.0.0/16;', '        deny all;', '    }', '}']);
+const SYSCTL = Array.from({ length: 60 }, (_, i) => i === 41 ? 'vm.swappiness = 10' : i === 0 ? '# /etc/sysctl.d/99-tuning.conf' : `net.core.option_${String(i + 1).padStart(2, '0')} = ${(i * 37) % 100}`).join('\n');
+const SSHD_LONG = lines(['# This is the sshd server system-wide configuration file.', '# See sshd_config(5) for more information.', '', 'Include /etc/ssh/sshd_config.d/*.conf', '', '#Port 22', '#AddressFamily any', '#ListenAddress 0.0.0.0', '#ListenAddress ::', '', '#HostKey /etc/ssh/ssh_host_rsa_key', '#HostKey /etc/ssh/ssh_host_ed25519_key', '', '# Logging', '#SyslogFacility AUTH', '#LogLevel INFO', '', '# Authentication:', '#LoginGraceTime 2m', '#PermitRootLogin prohibit-password', '#StrictModes yes', '#MaxAuthTries 6', '#MaxSessions 10', '', '#PubkeyAuthentication yes', '#AuthorizedKeysFile .ssh/authorized_keys', '', '# To disable tunneled clear text passwords, change to no here!', '#PasswordAuthentication yes', '#PermitEmptyPasswords no', '', 'KbdInteractiveAuthentication no', 'UsePAM yes', 'X11Forwarding yes', 'PrintMotd no', 'AcceptEnv LANG LC_*', 'Subsystem sftp /usr/lib/openssh/sftp-server']);
+const NGX4 = lines(['server {', '    listen 80;', '    server_name shop.example.com;', '    return 301 https://$host$request_uri;', '}', '', 'server {', '    listen 443 ssl;', '    server_name shop.example.com;', '    root /var/www/shop/public;', '}', '', 'server {', '    listen 8443 ssl;', '    server_name admin.example.com;', '    root /var/www/admin;', '}', '', 'server {', '    listen 9000;', '    server_name metrics.internal;', '}']);
+const ENV = lines(['APP_NAME=shop', 'APP_ENV=production', 'APP_URL=https://shop.example.com', '', 'DB_HOST=10.0.0.21', 'DB_PORT=5432', 'DB_NAME=shop', 'DB_USER=shop_app', '', 'REDIS_HOST=10.0.0.31', 'CACHE_TTL=300', 'QUEUE_WORKERS=4', 'DEBUG_MODE=on', 'LOG_LEVEL=info', 'MAIL_FROM=no-reply@example.com', 'SENTRY_DSN=', 'FEATURE_NEW_CHECKOUT=false']);
+const PORTS = lines(['upstream app {', '    server 127.0.0.1:8080;', '    server 127.0.0.1:8081;', '}', '# health check hits 8080 and the admin port 8080', 'healthcheck_url = http://localhost:8080/health']);
+const SSHD_BOSS = lines(['# sshd_config (managed by ops)', 'Include /etc/ssh/sshd_config.d/*.conf', 'Port 22', '#AddressFamily any', 'PermitRootLogin prohibit-password', 'PubkeyAuthentication yes', '#PasswordAuthentication yes', 'KbdInteractiveAuthentication no', 'UsePAM yes', 'X11Forwarding no', 'PrintMotd no', 'Subsystem sftp /usr/lib/openssh/sftp-server']);
+const HOSTS = lines(['127.0.0.1   localhost', '127.0.1.1   web01', '10.0.0.4    cache01']);
+const CRON = lines(['# m h  dom mon dow   command', '0 2 * * * /usr/local/bin/backup.sh', '30 3 * * 0 /usr/local/bin/rotate-logs.sh', '*/5 * * * * /usr/local/bin/healthcheck.sh']);
+const APPENV = lines(['APP_ENV=production', 'WORKERS=2', 'LOG_LEVEL=info']);
+
+/* ============================== lessons ============================== */
+const LESSONS = [
+{ id: 'escape', tag: 'Survival', title: 'Get out alive',
+  intro: `<p>vi starts in <b>Normal mode</b>. In Normal mode every key is a command, not text. That is why people feel trapped the first time they open it.</p><p>So learn the exit first. Press <kbd>Esc</kbd>, type <kbd>:q!</kbd> and press <kbd>Enter</kbd>. vi closes and nothing gets saved. You can always start over.</p>`,
+  keys: [['Esc', 'Back to Normal mode. Safe to press any time, even twice.'], [':q', 'Quit. Refuses if the file changed.'], [':q!', 'Quit and throw away all changes.']],
+  watch: `<b>Ctrl-C does not quit vi</b>, and closing the SSH window leaves a swap file behind that will greet you next time (you meet it in lesson 12).`,
+  quiz: { q: 'You opened the wrong file and pressed a few random keys. What is the safest way out?', opts: ['Press Ctrl-C a few times', 'Type :wq and Enter', 'Esc, then :q! and Enter', 'Close the terminal window'], a: 2, why: ':wq would save whatever those keys did. Ctrl-C only prints a hint. Closing the window leaves a swap file. Esc :q! leaves the file exactly as it was.' },
+  drills: [
+    { task: 'The file is open and unchanged. Quit with <kbd>:q</kbd> then <kbd>Enter</kbd>. Watch the bottom line as you type.', file: 'motd.txt', content: MOTD, check: H.closed, chips: [['vi closed', H.closed]], par: 3, hint: 'Type a colon, then q, then press Enter. The command appears on the bottom line while you type it.' },
+    { task: 'Someone left a change in this buffer (look at the last line). Try <kbd>:q</kbd> first and read the error. Then quit <em>without</em> saving.', file: 'motd.txt', content: MOTD, pre: v => { v.L.push('jjjkkk:wqq dd'); v.cy = 3; }, check: t => H.closed(t) && H.file(t, 'motd.txt') === MOTD, chips: [['vi closed', H.closed], ['File left unchanged', t => H.file(t, 'motd.txt') === MOTD]], par: 4, hint: 'E37 means "you have unsaved changes". Add ! to override: :q! then Enter.', tip: 'E37 is vi protecting you. <kbd>:q!</kbd> is the "yes, I really mean it" version.' },
+    { task: 'You are stuck in <b>INSERT</b> mode with junk typed in. Get back to Normal mode, then quit without saving.', start: 'insert', file: 'motd.txt', content: MOTD, pre: v => { v.L[0] += ' how do i exit this??'; v.cx = v.L[0].length; }, check: t => H.closed(t) && H.file(t, 'motd.txt') === MOTD, chips: [['vi closed', H.closed], ['File left unchanged', t => H.file(t, 'motd.txt') === MOTD]], par: 5, hint: 'Esc first. The -- INSERT -- label disappears. Then :q! and Enter.', tip: 'Whenever you are unsure what mode you are in, press <kbd>Esc</kbd>. It never hurts.' },
+  ] },
+{ id: 'modes', tag: 'Basics', title: 'Normal mode and Insert mode',
+  intro: `<p>vi has two main modes. <b>Normal mode</b> is for moving and running commands. <b>Insert mode</b> is for typing text.</p><p>Press <kbd>i</kbd> to start inserting before the cursor. The bottom line shows <b>-- INSERT --</b>. Press <kbd>Esc</kbd> to go back to Normal mode. You will switch back and forth all the time.</p>`,
+  keys: [['i', 'Insert before the cursor'], ['Esc', 'Stop inserting, back to Normal mode'], ['Backspace', 'In Insert mode: delete the character before the cursor']],
+  watch: `Typing a word in <b>Normal</b> mode runs it as commands. Typing <kbd>hello</kbd> moves left (h), jumps to a word end (e), moves right twice (l l), then <b>opens a new line</b> (o). Check the mode first.`,
+  quiz: { q: 'The bottom line shows -- INSERT --. What happens when you type dd?', opts: ['The current line is deleted', 'The letters "dd" are typed into the file', 'Nothing', 'vi quits'], a: 1, why: 'In Insert mode keys are text. dd only deletes a line in Normal mode.' },
+  drills: [
+    { task: 'Press <kbd>i</kbd>, type <kbd>hello</kbd>, then press <kbd>Esc</kbd>.', file: 'greeting.txt', content: '', want: 'hello', par: 7, hint: 'i switches to Insert mode. Type hello. Esc goes back to Normal mode.' },
+    { task: 'The domain is missing a letter. The cursor is on the <b>m</b>. Insert an <b>a</b> before it so it reads <b>example</b>, then <kbd>Esc</kbd>.', file: 'shop.conf', content: 'server_name exmple.com;', cx: 14, want: 'server_name example.com;', par: 3, hint: 'i inserts before the cursor: i, a, Esc.' },
+    { task: 'Type two lines into this empty file: <kbd>user www-data;</kbd> then <kbd>Enter</kbd> then <kbd>worker_processes 4;</kbd>. Finish with <kbd>Esc</kbd>.', file: 'nginx.conf', content: '', want: 'user www-data;\nworker_processes 4;', par: 36, hint: 'One i is enough. Enter makes a new line while you are in Insert mode.' },
+  ] },
+{ id: 'save', tag: 'Basics', title: 'Saving and quitting',
+  intro: `<p>Commands that start with <kbd>:</kbd> are typed on the bottom line and run when you press <kbd>Enter</kbd>. Only type them from Normal mode.</p><p><kbd>:w</kbd> writes (saves), <kbd>:q</kbd> quits, and <kbd>:wq</kbd> does both. <kbd>:x</kbd> and <kbd>ZZ</kbd> also save and quit, but only write if something changed.</p>`,
+  keys: [[':w', 'Save and keep editing'], [':wq', 'Save and quit'], [':x  or  ZZ', 'Save (if changed) and quit'], [':q!', 'Quit without saving']],
+  watch: `Typing <kbd>:wq</kbd> while still in Insert mode puts the text ":wq" into your file. Always <kbd>Esc</kbd> first.`,
+  quiz: { q: 'vi says "E37: No write since last change". What does it mean?', opts: ['The disk is full', 'You changed the file and tried to quit without saving', 'The file is read-only', 'You have no permission'], a: 1, why: 'vi refuses to drop your changes silently. Save with :wq or discard with :q!.' },
+  drills: [
+    { task: 'Comment out the first line: the cursor is at the start, so insert a <b>#</b> there. Then save and quit with <kbd>:wq</kbd>.', file: 'sshd_config', content: 'PermitRootLogin yes\nPort 22', want: '#PermitRootLogin yes\nPort 22', saveQuit: true, par: 7, hint: 'i # Esc, then :wq Enter.' },
+    { task: 'Change <b>50</b> to <b>150</b> (cursor is on the 5). Save with <kbd>:w</kbd> but <b>stay in vi</b>.', file: 'app.conf', content: 'max_clients 50\ntimeout 30', cx: 12, want: 'max_clients 150\ntimeout 30', check: t => H.normal(t) && H.file(t, 'app.conf') === 'max_clients 150\ntimeout 30' && !t.vi.dirty, chips: [['Text matches', t => H.cur(t) === 'max_clients 150\ntimeout 30'], ['Saved to disk', t => H.file(t, 'app.conf') === 'max_clients 150\ntimeout 30'], ['vi still open', t => !!t.vi]], par: 6, hint: 'i 1 Esc, then :w Enter.', tip: 'Save often with <kbd>:w</kbd> on long edits. An SSH drop then costs you nothing.' },
+    { task: 'You already changed the port to 8080 and you are still in <b>INSERT</b> mode. Save and quit. Careful.', start: 'insert', file: 'site.conf', content: 'listen 80;\nserver_name example.com;', pre: v => { v.L[0] = 'listen 8080;'; v.cx = 11; }, want: 'listen 8080;\nserver_name example.com;', saveQuit: true, par: 5, hint: 'Esc first, then :wq Enter. If ":wq" ended up in the file, press u after Esc.' },
+    { task: 'Shortcut time. This file has a change. Save and quit with <kbd>ZZ</kbd> (capital Z, twice).', file: 'backup.conf', content: 'backup_dir=/var/backups\nkeep_days=7', pre: v => { v.L[1] = 'keep_days=14'; v.cy = 1; }, want: 'backup_dir=/var/backups\nkeep_days=14', saveQuit: true, par: 2, hint: 'Shift+Z twice. No colon, no Enter.' },
+  ] },
+{ id: 'hjkl', tag: 'Moving', title: 'Moving with h j k l',
+  intro: `<p>In Normal mode, <kbd>h</kbd> moves left, <kbd>j</kbd> down, <kbd>k</kbd> up and <kbd>l</kbd> right. Your fingers never leave the home row.</p><p>Put a number in front to repeat: <kbd>5j</kbd> moves five lines down, <kbd>12l</kbd> twelve characters right.</p>`,
+  keys: [['h  l', 'Left, right'], ['j  k', 'Down, up (j hangs down like an arrow)'], ['5j', 'Down 5 lines. Counts work with most commands.']],
+  watch: `Arrow keys usually work, but on minimal servers (busybox vi, vi.tiny) arrows in Insert mode can type junk like <b>^[OA</b> into your file. hjkl always works.`,
+  quiz: { q: 'Which key moves the cursor down one line?', opts: ['h', 'j', 'k', 'l'], a: 1, why: 'j is down, k is up. A trick: j has a tail pointing down.' },
+  drills: [
+    { task: 'Land the cursor on the highlighted square using <kbd>h</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>l</kbd>.', file: '/etc/fstab', content: FSTAB, targets: [[2, 3]], par: 5, hint: 'Two lines down (j j), three right (l l l).' },
+    { task: 'Hit all four targets in order. Try counts like <kbd>3j</kbd> or <kbd>15h</kbd> to save keys.', file: '/etc/fstab', content: FSTAB, targets: [[1, 17], [4, 17], [4, 2], [6, 5]], par: 13, hint: 'j17l, then 3j, then 15h, then 2j3l.' },
+    { task: 'The target is far down. Get there in two keys with a count.', file: 'syslog', content: LOG, targets: [[9, 0]], par: 2, hint: '9j moves down nine lines.', tip: 'Counts are everywhere in vi: <kbd>3dd</kbd>, <kbd>4w</kbd>, <kbd>10x</kbd>.' },
+  ] },
+{ id: 'jumps', tag: 'Moving', title: 'Jumping: words, lines, the whole file',
+  intro: `<p>Moving one character at a time is slow. <kbd>w</kbd> jumps to the next word, <kbd>b</kbd> back a word, <kbd>e</kbd> to the end of a word. <kbd>0</kbd> goes to the start of the line and <kbd>$</kbd> to the end.</p><p><kbd>gg</kbd> goes to the first line, <kbd>G</kbd> to the last. <kbd>:42</kbd> jumps to line 42, which is handy when an error message names a line. <kbd>:set nu</kbd> shows line numbers.</p>`,
+  keys: [['w  b  e', 'Next word, back a word, end of word'], ['0  ^  $', 'Line start, first non-blank, line end'], ['gg  G', 'First line, last line'], [':42', 'Go to line 42'], [':set nu', 'Show line numbers (:set nonu hides them)']],
+  watch: `<kbd>G</kbd> and <kbd>g</kbd> are different keys. Caps Lock turns a harmless <kbd>j</kbd> into <kbd>J</kbd>, which joins lines.`,
+  quiz: { q: 'nginx says the error is on line 87 of the config. Fastest way there?', opts: ['Press j 86 times', ':87 then Enter', '/87', 'G'], a: 1, why: ':87 (or 87G) jumps straight to that line. /87 searches for the text "87".' },
+  drills: [
+    { task: 'Jump to the end of this line in one key.', file: 'nginx.conf', content: NGX, cy: 3, cx: 4, targets: [[3, NGX.split('\n')[3].length - 1]], par: 1, hint: '$ goes to the end of the line.' },
+    { task: 'Jump to the very start of the line in one key.', file: 'nginx.conf', content: NGX, cy: 6, cx: NGX.split('\n')[6].length - 1, targets: [[6, 0]], par: 1, hint: '0 (zero) goes to column 1. ^ would go to the first non-blank character.' },
+    { task: 'Jump word by word to <b>vpn</b>. Try <kbd>w</kbd> a few times, or a count like <kbd>4w</kbd>.', file: 'nginx.conf', content: NGX, cy: 4, cx: 4, targets: [[4, colOf(NGX.split('\n')[4], 'vpn')]], par: 2, hint: 'From # it is four words: allow, office, and, vpn. 4w.' },
+    { task: 'Hit the last line, then the first line.', file: 'nginx.conf', content: NGX, cy: 4, cx: 4, targets: [[9, 0], [0, 0]], par: 3, hint: 'G (capital) for the last line, gg for the first.' },
+    { task: 'Turn on line numbers with <kbd>:set nu</kbd>.', file: 'sysctl.conf', content: SYSCTL, check: t => !!t.vi && t.vi.nu && t.vi.mode === 'normal', chips: [['Line numbers on', t => !!t.vi && t.vi.nu]], par: 8, hint: 'Type :set nu and press Enter.' },
+    { task: 'An error says "line 42". Line numbers are on. Jump straight there.', file: 'sysctl.conf', content: SYSCTL, nu: true, targets: [[41, 0]], par: 4, hint: ':42 then Enter.', tip: '<kbd>42G</kbd> does the same thing as <kbd>:42</kbd>.' },
+  ] },
+{ id: 'delete', tag: 'Editing', title: 'Deleting: x, dw, dd, D',
+  intro: `<p><kbd>x</kbd> deletes the character under the cursor. <kbd>dd</kbd> deletes the whole line. <kbd>d</kbd> combines with any motion: <kbd>dw</kbd> deletes to the next word, <kbd>d$</kbd> (or <kbd>D</kbd>) to the end of the line.</p><p>Counts work here too: <kbd>3x</kbd>, <kbd>3dd</kbd>, <kbd>d2w</kbd>.</p>`,
+  keys: [['x', 'Delete one character'], ['dw', 'Delete to the start of the next word'], ['dd', 'Delete the line'], ['D', 'Delete to end of line'], ['3dd', 'Delete 3 lines']],
+  watch: `Deleted text is not gone: it sits in a register and <kbd>p</kbd> pastes it back. Pressing <kbd>dd</kbd> by accident? <kbd>u</kbd> undoes it.`,
+  quiz: { q: 'What does 3dd do?', opts: ['Deletes 3 characters', 'Deletes the current line and the 2 below it', 'Deletes 3 words', 'Deletes line 3'], a: 1, why: 'A count before dd deletes that many lines, starting at the cursor.' },
+  drills: [
+    { task: 'Remove the three <b>!</b> characters. The cursor is on the first one.', file: 'sshd_config', content: 'Port!!! 22', cx: 4, want: 'Port 22', par: 2, hint: 'x deletes one. 3x deletes three.' },
+    { task: 'Delete the line that says <b># DELETE THIS LINE</b>.', file: '.ssh/config', content: 'Host web01\n# DELETE THIS LINE\n  HostName 10.0.0.11\n  User deploy', want: 'Host web01\n  HostName 10.0.0.11\n  User deploy', par: 3, hint: 'j to move down, then dd.' },
+    { task: 'There is a doubled <b>yes</b>. The cursor is on the first one. Delete that word.', file: 'sshd_config', content: 'PermitRootLogin yes yes', cx: 16, want: 'PermitRootLogin yes', par: 2, hint: 'dw deletes from the cursor to the next word, including the space.' },
+    { task: 'Delete the comment and the two old servers below it (3 lines, starting at the cursor).', file: 'upstream.conf', content: 'upstream app {\n    server 10.0.0.11:8080;\n    # old servers below\n    server 10.0.0.98:8080;\n    server 10.0.0.99:8080;\n}', cy: 2, cx: 4, want: 'upstream app {\n    server 10.0.0.11:8080;\n}', par: 3, hint: '3dd' },
+    { task: 'Delete the trailing comment: everything from the cursor to the end of the line.', file: 'sshd_config', content: 'Port 22  # temp hack, remove later', cx: 7, want: 'Port 22', par: 1, hint: 'D (capital) is the same as d$.' },
+  ] },
+{ id: 'undo', tag: 'Editing', title: 'Undo and redo',
+  intro: `<p><kbd>u</kbd> undoes the last change. Press it again to go further back. <kbd>Ctrl-R</kbd> redoes what you undid.</p><p>An entire Insert session (from <kbd>i</kbd> to <kbd>Esc</kbd>) counts as one change, so one <kbd>u</kbd> removes everything you just typed.</p>`,
+  keys: [['u', 'Undo'], ['Ctrl-R', 'Redo'], ['3u', 'Undo three changes'], [':q!', 'The big undo: drop everything since the last save']],
+  watch: `<kbd>U</kbd> (capital) is a different, confusing command. Also: minimal <b>busybox vi</b> only remembers one level of undo. Most distros ship vim, which keeps full history.`,
+  quiz: { q: 'You typed a whole paragraph in Insert mode, pressed Esc, and want it gone. What do you press?', opts: ['u once', 'u for every character', 'Ctrl-Z', 'Backspace'], a: 0, why: 'One Insert session is one change, so a single u removes it. Ctrl-Z would suspend vi.' },
+  drills: [
+    { task: 'Oops. A cron line was deleted by accident a moment ago. Bring it back.', file: 'crontab', content: CRON, pre: v => { v.snap(); v.L.splice(2, 1); v.cy = 2; }, want: CRON, par: 1, hint: 'u' },
+    { task: 'Three bad edits happened in a row. Undo all three.', file: 'crontab', content: CRON, pre: v => { v.snap(); v.L[1] = v.L[1].replace('backup', 'bakcup'); v.snap(); v.L.push('oops oops'); v.snap(); v.L.splice(0, 1); v.cy = 0; }, want: CRON, par: 2, hint: 'u u u, or 3u.' },
+    { task: 'Practice the loop: delete the <b>debug</b> line with <kbd>dd</kbd>, undo it with <kbd>u</kbd>, then redo it with <kbd>Ctrl-R</kbd>.', file: 'app.ini', content: 'env=production\ndebug=true\nworkers=4', cy: 1, want: 'env=production\nworkers=4', check: t => H.normal(t) && H.cur(t) === 'env=production\nworkers=4' && t.keylog.includes('u') && t.keylog.includes('<C-r>'), chips: [['Used u', t => t.keylog.includes('u')], ['Used Ctrl-R', t => t.keylog.includes('<C-r>')], ['debug line gone', t => H.cur(t) === 'env=production\nworkers=4']], par: 4, hint: 'dd, u, Ctrl-R. On a Mac use the Control key, not Command. The Ctrl-R button below works too.' },
+  ] },
+{ id: 'insert2', tag: 'Editing', title: 'More ways into Insert mode',
+  intro: `<p><kbd>i</kbd> is not the only way in. <kbd>a</kbd> appends after the cursor, <kbd>A</kbd> appends at the end of the line, <kbd>I</kbd> inserts at the start of the line.</p><p><kbd>o</kbd> opens a new line below and <kbd>O</kbd> opens one above. All of them leave you in Insert mode. <kbd>Esc</kbd> when done.</p>`,
+  keys: [['a', 'Append after the cursor'], ['A', 'Append at end of line'], ['I', 'Insert at start of line'], ['o', 'New line below'], ['O', 'New line above']],
+  watch: `Moving with <kbd>$</kbd> then <kbd>i</kbd> inserts <b>before</b> the last character, a classic off-by-one. <kbd>A</kbd> gets it right.`,
+  quiz: { q: 'You want to add a semicolon at the end of a line. Which is fastest?', opts: ['$ then i', 'A', 'o', 'I'], a: 1, why: 'A jumps to the end and starts inserting there. $ i would insert before the last character.' },
+  drills: [
+    { task: 'Add the missing <b>;</b> at the end of the line.', file: 'shop.conf', content: 'server_name example.com', want: 'server_name example.com;', par: 3, hint: 'A ; Esc' },
+    { task: 'Comment out this line: add <b>#</b> before <b>PasswordAuthentication</b>. The cursor is in the middle.', file: 'sshd_config', content: '    PasswordAuthentication yes', cx: 20, want: '    #PasswordAuthentication yes', par: 3, hint: 'I inserts before the first non-blank character: I # Esc.' },
+    { task: 'Add <b>bind-address=127.0.0.1</b> on a new line right below <b>[mysqld]</b>.', file: 'my.cnf', content: '[mysqld]\nport=3306', want: '[mysqld]\nbind-address=127.0.0.1\nport=3306', par: 24, hint: 'o opens the line below and puts you in Insert mode.' },
+    { task: 'Add a shebang line <b>#!/bin/bash</b> above the first line.', file: 'deploy.sh', content: 'echo "deploy started"', want: '#!/bin/bash\necho "deploy started"', par: 13, hint: 'O (capital) opens a line above.' },
+    { task: 'Make the permissions <b>644</b>. The cursor is on the <b>4</b>. Add a 4 right after it.', file: 'fix-perms.sh', content: 'chmod 64 deploy.sh', cx: 7, want: 'chmod 644 deploy.sh', par: 3, hint: 'a appends after the cursor: a 4 Esc.' },
+  ] },
+{ id: 'yank', tag: 'Editing', title: 'Copy and paste: yy, p, P',
+  intro: `<p>vi calls copying <b>yanking</b>. <kbd>yy</kbd> yanks the line, <kbd>yw</kbd> a word, <kbd>3yy</kbd> three lines. <kbd>p</kbd> pastes after the cursor (below, for lines) and <kbd>P</kbd> before (above).</p><p>Anything you delete also lands in the same register, so <kbd>dd</kbd> then <kbd>p</kbd> is how you <b>move</b> a line.</p>`,
+  keys: [['yy', 'Copy the line'], ['3yy', 'Copy 3 lines'], ['p', 'Paste below / after'], ['P', 'Paste above / before'], ['dd … p', 'Cut and paste: move a line']],
+  watch: `Pasting from your laptop's clipboard into vi over SSH can auto-indent each line further and further. Run <kbd>:set paste</kbd> first, then <kbd>i</kbd> and paste.`,
+  quiz: { q: 'You deleted a line with dd. Where did it go?', opts: ['It is gone for good', 'Into a register, ready for p', 'To the trash folder', 'To the system clipboard'], a: 1, why: 'Deletes go into vi\'s unnamed register, so p pastes them back.' },
+  drills: [
+    { task: 'Duplicate this line so there are two identical lines.', file: 'upstream.conf', content: 'server 10.0.0.11:8080;', want: 'server 10.0.0.11:8080;\nserver 10.0.0.11:8080;', par: 3, hint: 'yy then p.' },
+    { task: 'The steps are out of order. Move <b>2. run migrations</b> (cursor is on it) above <b>3. start app</b>.', file: 'runbook.txt', content: '1. stop app\n3. start app\n2. run migrations', cy: 2, want: '1. stop app\n2. run migrations\n3. start app', par: 3, hint: 'dd cuts it and the cursor lands on "3. start app". P pastes above.' },
+    { task: 'Copy the 3-line location block and paste it at the very end of the file.', file: 'locations.conf', content: 'location /a {\n    proxy_pass http://a;\n}\n# paste a copy below this line', want: 'location /a {\n    proxy_pass http://a;\n}\n# paste a copy below this line\nlocation /a {\n    proxy_pass http://a;\n}', par: 5, hint: '3yy, G, p.' },
+  ] },
+{ id: 'search', tag: 'Finding', title: 'Search: / n N',
+  intro: `<p>Type <kbd>/</kbd> and some text, then <kbd>Enter</kbd>, to jump to the next match. <kbd>n</kbd> goes to the next match, <kbd>N</kbd> to the previous one. <kbd>?</kbd> searches backwards.</p><p>On a 400-line config this is how you find things: never scroll for them.</p>`,
+  keys: [['/text', 'Search forward'], ['?text', 'Search backward'], ['n  N', 'Next, previous match'], [':set ic', 'Ignore case while searching']],
+  watch: `Search is case-sensitive: <kbd>/passwordauth</kbd> will not find <b>PasswordAuthentication</b>. Also, <b>.</b> and <b>*</b> are special in patterns: <kbd>/10.0.0.1</kbd> also matches 10a0b0c1.`,
+  quiz: { q: 'You searched /listen and landed on the first match. How do you get to the next one?', opts: ['/ again', 'n', 'N', 'j'], a: 1, why: 'n repeats the search forward. N goes the other way.' },
+  drills: [
+    { task: 'Find the <b>PasswordAuthentication</b> line in this long sshd_config.', file: 'sshd_config', content: SSHD_LONG, check: t => H.normal(t) && t.vi.cy === lineOf(SSHD_LONG, 'PasswordAuthentication'), chips: [['Cursor on that line', t => !!t.vi && t.vi.cy === lineOf(SSHD_LONG, 'PasswordAuthentication')]], par: 10, hint: '/Password then Enter. You don\'t need to type the whole word.' },
+    { task: 'Go to the <b>third</b> <b>listen</b> line (the 8443 one).', file: 'sites.conf', content: NGX4, check: t => H.normal(t) && t.vi.cy === lineOf(NGX4, 'listen', 3), chips: [['On the third listen', t => !!t.vi && t.vi.cy === lineOf(NGX4, 'listen', 3)]], par: 10, hint: '/listen Enter takes you to the first. n, n for the next two.' },
+    { task: 'Production should not run in debug. Find <b>DEBUG_MODE</b> and delete that line.', file: '.env', content: ENV, want: ENV.replace('DEBUG_MODE=on\n', ''), par: 9, hint: '/DEBUG Enter, then dd.' },
+  ] },
+{ id: 'replace', tag: 'Finding', title: 'Replace: r, cw, :%s',
+  intro: `<p><kbd>r</kbd> replaces the single character under the cursor and keeps you in Normal mode. <kbd>cw</kbd> changes a word: it deletes it and puts you in Insert mode.</p><p>For many replacements use substitute: <kbd>:%s/old/new/g</kbd>. <b>%</b> means every line and <b>g</b> means every match on each line.</p>`,
+  keys: [['r', 'Replace one character'], ['cw', 'Change word (then type, then Esc)'], ['C', 'Change to end of line'], [':%s/a/b/g', 'Replace a with b everywhere'], [':s/a/b/', 'Only on the current line, first match']],
+  watch: `Without the <b>g</b>, <kbd>:%s/8080/9090/</kbd> only changes the <b>first</b> match on each line. Lines with two matches keep one of them.`,
+  quiz: { q: 'What does the g in :%s/http/https/g do?', opts: ['Makes it global across files', 'Replaces every match on each line, not just the first', 'Ignores case', 'Saves the file'], a: 1, why: '% picks all lines. g replaces every occurrence within each line.' },
+  drills: [
+    { task: 'Fix the typo: <b>2223</b> should be <b>2222</b>. The cursor is on the last digit.', file: 'sshd_config', content: 'Port 2223', cx: 8, want: 'Port 2222', par: 2, hint: 'r then 2.' },
+    { task: 'Change <b>yes</b> to <b>no</b>. The cursor is on the y.', file: 'sshd_config', content: 'PermitRootLogin yes', cx: 16, want: 'PermitRootLogin no', par: 5, hint: 'cw no Esc.' },
+    { task: 'The app moved from port 8080 to 9090. Replace <b>every</b> 8080 in the file with one command.', file: 'app.conf', content: PORTS, want: PORTS.replace(/8080/g, '9090'), par: 16, hint: ':%s/8080/9090/g then Enter. Don\'t forget the g: one line has two matches.' },
+  ] },
+{ id: 'server', tag: 'Real servers', title: 'Server missions',
+  intro: `<p>Real servers add real problems: files owned by root, leftover swap files, frozen screens, and a vi that suddenly vanishes. Each mission starts at a shell prompt or in a broken state. Read the coach panel when something goes wrong.</p><p>Shell commands here: <kbd>vi file</kbd>, <kbd>sudo vi file</kbd>, <kbd>cat file</kbd>, <kbd>ls</kbd>, <kbd>fg</kbd>.</p>`,
+  keys: [['sudo vi file', 'Edit a root-owned file'], ['E325 → E / D', 'Swap file found: edit anyway / delete it'], ['Ctrl-Q', 'Unfreeze after an accidental Ctrl-S'], ['fg', 'Bring back vi after Ctrl-Z']],
+  watch: `After editing <b>sshd_config</b> run <kbd>sudo sshd -t</kbd> before restarting ssh, and keep your current session open. A typo there can lock you out of the server.`,
+  quiz: { q: 'You spent 10 minutes editing /etc/nginx/nginx.conf and :w says "E212: Can\'t open file for writing". Best move?', opts: [':q! and start again with sudo', ':w /tmp/nginx.conf to save a copy, then :q!, then sudo cp it into place', 'Keep pressing :w!', 'Close the terminal'], a: 1, why: 'Save your work somewhere you can write, then copy it in with sudo. :q! would lose 10 minutes of edits, and :w! cannot beat file permissions.' },
+  drills: [
+    { task: 'Add <b>10.0.0.5 db01</b> (one space) as a new last line of <b>/etc/hosts</b>, save and quit. The file belongs to root.', start: 'shell', path: '/etc/hosts', files: { '/etc/hosts': { content: HOSTS, root: true } }, want: HOSTS + '\n10.0.0.5 db01', saveQuit: true, par: 39, hint: 'sudo vi /etc/hosts, then G o 10.0.0.5 db01 Esc :wq Enter. If you opened it without sudo: :q! and start again.', tip: 'Without sudo, vi shows <b>[readonly]</b> right when it opens. Check the bottom line before you start editing.' },
+    { task: 'Set <b>WORKERS=4</b> in <b>app/.env</b> and save. Your last SSH session dropped mid-edit…', start: 'shell', path: 'app/.env', files: { 'app/.env': { content: APPENV, swap: true } }, want: APPENV.replace('WORKERS=2', 'WORKERS=4'), saveQuit: true, par: 22, hint: 'vi app/.env. At the E325 screen press E (edit anyway) or D (delete the stale swap). Then j $ r 4 :wq Enter.', tip: 'Before you press E, check nobody else is editing: <kbd>ps aux | grep vi</kbd>. Two people saving the same file overwrite each other.' },
+    { task: 'A colleague pressed <kbd>Ctrl-S</kbd> and the terminal looks dead. The replica change is done. Unfreeze, then save and quit.', start: 'frozen', file: 'deploy.yml', content: 'replicas: 2\nimage: shop:1.4.2', pre: v => { v.L[0] = 'replicas: 3'; v.cx = 10; }, want: 'replicas: 3\nimage: shop:1.4.2', saveQuit: true, par: 5, hint: 'Ctrl-Q unfreezes (use the button below if your keyboard fights you). Then :wq Enter.' },
+    { task: 'vi disappeared and the shell says <b>Stopped</b>. Your edit is inside it. Get it back, then save and quit.', start: 'stopped', file: 'app/.env', content: APPENV, pre: v => { v.L[2] = 'LOG_LEVEL=debug'; v.cy = 2; }, want: APPENV.replace('info', 'debug'), saveQuit: true, par: 7, hint: 'fg Enter brings vi back. Then :wq Enter. Running vi app/.env again would hit a swap-file warning instead.' },
+    { task: 'Final mission: in <b>/etc/ssh/sshd_config</b> change <b>Port 22</b> to <b>Port 2222</b>, and change <b>#PasswordAuthentication yes</b> to <b>PasswordAuthentication no</b>. Save and quit.', start: 'shell', path: '/etc/ssh/sshd_config', files: { '/etc/ssh/sshd_config': { content: SSHD_BOSS, root: true } }, want: SSHD_BOSS.replace('Port 22', 'Port 2222').replace('#PasswordAuthentication yes', 'PasswordAuthentication no'), saveQuit: true, par: 55, hint: 'sudo vi /etc/ssh/sshd_config. /Port Enter, A 22 Esc. /#Pass Enter, x, $, cw no Esc (or cw on "yes"). :wq Enter.', tip: 'Next on a real server: <kbd>sudo sshd -t</kbd> to check the config, then restart ssh while keeping this session open.' },
+  ] },
+];
+
+/* ============================== progress ============================== */
+const KEY = 'viBootCamp.v1';
+let prog = { stars: {}, best: {}, li: 0 };
+try { prog = Object.assign(prog, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(prog)); } catch (e) {} };
+const did = (li, ci) => `${LESSONS[li].id}-${ci}`;
+const TOTAL = LESSONS.reduce((a, l) => a + l.drills.length, 0);
+const RANKS = [[0, 'Trapped in vi'], [6, 'Escape artist'], [25, 'Navigator'], [55, 'Editor'], [90, 'Sysadmin'], [125, 'vi wizard']];
+function updateRank() {
+  const s = Object.values(prog.stars).reduce((a, b) => a + b, 0);
+  document.getElementById('starCount').textContent = s;
+  document.getElementById('rankName').textContent = RANKS.filter(r => s >= r[0]).pop()[1];
+  document.getElementById('rankBar').style.width = Math.round(s / (TOTAL * 3) * 100) + '%';
+}
+
+/* ============================== views ============================== */
+const app = document.getElementById('view');
+const $ = (s, r = document) => r.querySelector(s);
+let state = { view: 'lessons', li: Math.min(prog.li || 0, LESSONS.length - 1), ci: 0 };
+let P = null, ARC = null;
+const kb = k => `<kbd>${esc(k)}</kbd>`;
+const starStr = n => '★'.repeat(n) + `<i>${'★'.repeat(3 - n)}</i>`;
+
+function teardown() { if (P) { P.destroy(); P = null; } if (ARC) { clearInterval(ARC.timer); if (ARC.P) ARC.P.destroy(); ARC = null; } }
+function render() {
+  teardown();
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === state.view ? 'page' : 'false'));
+  ({ lessons: renderLessons, arcade: renderArcade, quiz: renderQuiz, keys: renderKeys })[state.view]();
+  updateRank();
+}
+function go(v) { state.view = v; if (location.hash.slice(1) !== v) history.replaceState(null, '', '#' + v); render(); window.scrollTo(0, 0); }
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => go(b.dataset.view)));
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (['lessons', 'arcade', 'quiz', 'keys'].includes(h) && h !== state.view) go(h); });
+
+function lessonStatus(i) {
+  const l = LESSONS[i]; const got = l.drills.filter((_, c) => prog.stars[did(i, c)]).length;
+  return { got, n: l.drills.length, cls: got === l.drills.length ? 'done' : got ? 'part' : '' };
+}
+function routeHTML() {
+  return `<p class="rh">Your route</p>` + LESSONS.map((l, i) => { const s = lessonStatus(i); return `<button class="ri ${s.cls}" data-li="${i}" aria-current="${i === state.li}"><span class="dot">${s.cls === 'done' ? '✓' : i + 1}</span><span class="rt">${esc(l.title)}<span class="rs">${s.got}/${s.n} drills</span></span></button>`; }).join('');
+}
+function renderLessons() {
+  const L = LESSONS[state.li];
+  app.innerHTML = `<div class="lx">
+    <nav class="route" aria-label="Lessons">${routeHTML()}</nav>
+    <article class="lesson">
+      <header><div class="eyebrow">Lesson ${state.li + 1} of ${LESSONS.length} · ${L.tag}</div><h1>${esc(L.title)}</h1></header>
+      <div class="learn"><div class="intro">${L.intro}</div><dl class="keys">${L.keys.map(([k, d]) => `<div><dt>${kb(k)}</dt><dd>${d}</dd></div>`).join('')}</dl></div>
+      <aside class="watch"><span class="wl">Common mistake</span><p>${L.watch}</p></aside>
+      <section class="practice" aria-label="Practice">
+        <div class="phead"><h2>Practice</h2><div class="drills" id="drillTabs"></div></div>
+        <p class="task" id="task"></p>
+        <div class="pgrid">
+          <div class="pmain"><div id="player"></div>${padHTML()}</div>
+          <div class="pside">
+            <div class="card meter" id="meter"></div>
+            <div class="card" id="goal"></div>
+            <div class="card coach" id="coach"></div>
+            <div class="pbtns"><button class="btn ghost" id="hintBtn" type="button">Show hint</button><button class="btn ghost" id="resetBtn" type="button">Restart drill</button></div>
+          </div>
+        </div>
+      </section>
+      <section class="popq" id="popq"></section>
+      <nav class="lnav">${state.li > 0 ? `<button class="btn ghost" data-li="${state.li - 1}">← ${esc(LESSONS[state.li - 1].title)}</button>` : '<span></span>'}${state.li < LESSONS.length - 1 ? `<button class="btn ghost" data-li="${state.li + 1}">${esc(LESSONS[state.li + 1].title)} →</button>` : `<button class="btn" data-goview="arcade">Play the arcade →</button>`}</nav>
+    </article></div>`;
+  app.querySelectorAll('[data-li]').forEach(b => b.addEventListener('click', () => openLesson(+b.dataset.li)));
+  app.querySelectorAll('[data-goview]').forEach(b => b.addEventListener('click', () => go(b.dataset.goview)));
+  $('#hintBtn').addEventListener('click', () => { if (!P) return; P.hint = true; coach(P.ch.hint, 'Hint', 'hint'); focusPlayer(P); });
+  $('#resetBtn').addEventListener('click', () => { if (!P) return; P.reset(); defaultCoach(); focusPlayer(P); });
+  renderPop(L);
+  startDrill(state.ci, false);
+}
+function openLesson(i) { state.li = i; state.ci = firstOpen(i); prog.li = i; save(); render(); window.scrollTo(0, 0); }
+function firstOpen(i) { const l = LESSONS[i]; const c = l.drills.findIndex((_, k) => !prog.stars[did(i, k)]); return c < 0 ? 0 : c; }
+function drillTabs() {
+  const L = LESSONS[state.li];
+  $('#drillTabs').innerHTML = L.drills.map((_, i) => { const s = prog.stars[did(state.li, i)] || 0; return `<button type="button" data-ci="${i}" aria-current="${i === state.ci}">Drill ${i + 1} <span class="st">${starStr(s)}</span></button>`; }).join('');
+  $('#drillTabs').querySelectorAll('button').forEach(b => b.addEventListener('click', () => startDrill(+b.dataset.ci, true)));
+}
+function startDrill(ci, focus) {
+  state.ci = ci; const L = LESSONS[state.li], ch = L.drills[ci];
+  drillTabs();
+  $('#task').innerHTML = `<span class="tn">Drill ${ci + 1}/${L.drills.length}</span>${ch.task}`;
+  if (P) P.destroy();
+  P = new Player($('#player'), ch, {
+    onEvent: e => { const c = COACH[e]; if (c) coach(c[1], c[0], 'alert'); },
+    onRender: updateSide,
+    onWin: (p, s) => { const id = did(state.li, state.ci); prog.stars[id] = Math.max(prog.stars[id] || 0, s); save(); drillTabs(); $('.route').innerHTML = routeHTML(); $('.route').querySelectorAll('[data-li]').forEach(b => b.addEventListener('click', () => openLesson(+b.dataset.li))); updateRank(); },
+    onNext: nextDrill,
+    nextLabel: () => state.ci < L.drills.length - 1 ? 'Next drill' : state.li < LESSONS.length - 1 ? 'Next lesson' : 'Arcade',
+  });
+  defaultCoach();
+  updateSide(P);
+  if (focus) focusPlayer(P);
+}
+function nextDrill() {
+  const L = LESSONS[state.li];
+  if (state.ci < L.drills.length - 1) { startDrill(state.ci + 1, true); return; }
+  if (state.li < LESSONS.length - 1) { state.li++; state.ci = 0; prog.li = state.li; save(); render(); window.scrollTo(0, 0); return; }
+  go('arcade');
+}
+function defaultCoach() { coach('When something goes wrong, the coach explains it here. Stuck? Press Show hint (it caps the drill at 2 stars).', 'Coach', ''); }
+function coach(body, title, kind) {
+  const el = $('#coach'); if (!el) return;
+  el.className = 'card coach ' + (kind || '');
+  el.innerHTML = `<h4>${title}</h4><p>${body}</p>`;
+  if (kind === 'alert') { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+}
+function chipsFor(ch) {
+  if (ch.chips) return ch.chips;
+  const p = chPath(ch);
+  if (ch.saveQuit) return [['Text matches', t => H.cur(t) === ch.want], ['Saved to disk', t => H.file(t, p) === ch.want], ['vi closed', H.closed]];
+  if (ch.want != null) return [['Text matches', t => H.cur(t) === ch.want], ['Back in Normal mode', H.normal]];
+  return [];
+}
+function updateSide(p) {
+  const m = $('#meter'), g = $('#goal'); if (!m || !g) return;
+  const ch = p.ch, t = p.term;
+  m.innerHTML = `<span>Keys <b>${p.keys}</b></span><span>Par <b>${ch.par}</b></span><span>${p.keys <= ch.par ? '★★★' : p.keys <= ch.par * 2 ? '★★' : '★'} pace</span>`;
+  let h = '<div class="glabel">Goal</div>';
+  if (ch.targets) h += `<p style="margin:0">Land the cursor on the pulsing square${ch.targets.length > 1 ? 's, in order' : ''}. <b>${p.ti}/${ch.targets.length}</b> hit.</p>`;
+  else if (ch.want != null) {
+    const cur = (H.cur(t) ?? H.file(t, chPath(ch)) ?? '').split('\n'); const w = ch.want.split('\n');
+    h += `<pre class="want">${w.map((l, i) => `<span class="${cur[i] === l ? '' : 'diff'}">${esc(l) || ' '}</span>`).join('\n')}</pre>`;
+    if (cur.length > w.length) h += `<p style="margin:6px 0 0;font-size:12px;color:var(--muted)">Your file has ${cur.length - w.length} extra line${cur.length - w.length > 1 ? 's' : ''}.</p>`;
+  }
+  const chips = chipsFor(ch);
+  if (chips.length) h += `<ul class="chips">${chips.map(([l, f]) => `<li class="${f(t) ? 'ok' : ''}">${l}</li>`).join('')}</ul>`;
+  g.innerHTML = h;
+}
+function renderPop(L) {
+  const q = L.quiz, el = $('#popq');
+  el.innerHTML = `<div class="glabel">Check yourself</div><h3>${esc(q.q)}</h3><div class="opts">${q.opts.map((o, i) => `<button type="button" data-o="${i}">${esc(o)}</button>`).join('')}</div><p class="why" hidden></p>`;
+  el.querySelectorAll('[data-o]').forEach(b => b.addEventListener('click', () => {
+    const i = +b.dataset.o;
+    b.classList.add(i === q.a ? 'right' : 'wrong');
+    if (i === q.a) el.querySelectorAll('[data-o]').forEach(x => x.disabled = true);
+    const w = el.querySelector('.why'); w.hidden = false; w.textContent = (i === q.a ? 'Correct. ' : 'Not quite. ') + q.why;
+  }));
+}
+
+/* ---------- arcade ---------- */
+const RUSH = NGX;
+function rushPick(v, avoid) {
+  const c = [];
+  v.L.forEach((l, y) => { for (let x = 0; x < l.length; x++) { const k = cls(l[x]); if (k && (x === 0 || cls(l[x - 1]) !== k)) c.push([y, x]); } if (l.length) c.push([y, l.length - 1]); });
+  const ok = c.filter(p => !(p[0] === v.cy && p[1] === v.cx) && !(avoid && p[0] === avoid[0] && p[1] === avoid[1]) && Math.abs(p[0] - v.cy) + Math.abs(p[1] - v.cx) > 3);
+  return ok[Math.floor(Math.random() * ok.length)] || c[0];
+}
+function surgeonBoard() {
+  const good = Array.from({ length: 9 }, (_, i) => `allow 10.${i + 1}.${Math.floor(Math.random() * 200) + 20}.0/24;`);
+  const lines2 = good.slice(); const nj = 3 + Math.floor(Math.random() * 2);
+  for (let j = 0; j < nj; j++) lines2.splice(1 + Math.floor(Math.random() * (lines2.length)), 0, 'XXX junk rule, delete me XXX');
+  return { good, lines: lines2, junk: nj };
+}
+const GAMES = {
+  rush: { name: 'Cursor Rush', blurb: 'Hit as many targets as you can in 60 seconds. Use w, b, e, $, 0, counts and search.', secs: 60, unit: 'targets' },
+  surgeon: { name: 'Line Surgeon', blurb: 'Delete every XXX junk line and keep the good ones. Board clears, new board appears. 60 seconds.', secs: 60, unit: 'lines cut' },
+};
+function renderArcade() {
+  const g = (ARC && ARC.game) || prog.arcGame || 'rush';
+  app.innerHTML = `<div class="page">
+    <header><h1>Arcade</h1><p>Timed drills for muscle memory. Pick a game, press Start, and keep your hands on the keyboard.</p></header>
+    <div class="games">${Object.entries(GAMES).map(([k, v]) => `<button type="button" class="game" data-g="${k}" aria-pressed="${k === g}"><b>${v.name}</b><span>${v.blurb}</span><small>Best: ${prog.best[k] || 0} ${v.unit}</small></button>`).join('')}</div>
+    <div class="hud"><div class="card"><span>Time</span><b id="aTime">${GAMES[g].secs}.0</b></div><div class="card"><span>Score</span><b id="aScore">0</b></div><div class="card"><span>Best</span><b id="aBest">${prog.best[g] || 0}</b></div><div class="card"><span>Keys / point</span><b id="aKpp">–</b></div><button class="btn" id="aStart" type="button">Start</button></div>
+    <div class="arena"><div class="pmain"><div id="aPlayer"></div>${padHTML()}</div><div class="pside"><div class="card coach" id="coach"><h4>How to play</h4><p>${GAMES[g].blurb}</p></div></div></div>
+  </div>`;
+  app.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => { prog.arcGame = b.dataset.g; save(); ARC = { game: b.dataset.g }; render(); }));
+  ARC = { game: g, score: 0, running: false, timer: null };
+  setupArcade();
+  $('#aStart').addEventListener('click', startArcade);
+}
+function setupArcade() {
+  const A = ARC, g = A.game;
+  let ch;
+  if (g === 'rush') ch = { file: 'nginx.conf', content: RUSH, par: 1 };
+  else { A.board = surgeonBoard(); ch = { file: 'allowlist.conf', content: A.board.lines.join('\n'), par: 1 }; }
+  A.P = new Player($('#aPlayer'), ch, {
+    noCheck: true, startLocked: true,
+    onEvent: e => { const c = COACH[e]; if (c) coach(c[1], c[0], 'alert'); },
+    target: g === 'rush' ? () => A.target : null,
+    onHit: g === 'rush' ? p => { A.score++; A.target = rushPick(p.term.vi, A.target); hud(); } : null,
+    onAfter: g === 'surgeon' ? p => {
+      const v = p.term.vi; if (!v) return;
+      const ls = v.L; const goodOk = A.board.good.every(x => ls.includes(x));
+      if (!goodOk && !A.warned) { A.warned = true; const c = COACH['surgeon-oops']; coach(c[1], c[0], 'alert'); }
+      if (goodOk) A.warned = false;
+      if (goodOk && !ls.some(l => l.includes('XXX')) && ls.length === A.board.good.length) {
+        A.score += A.board.junk; A.board = surgeonBoard();
+        v.setText(A.board.lines.join('\n')); v.saved = v.text; v.undo = []; v.redo = []; v.cy = 0; v.cx = 0; v.top = 0;
+        p.$box.classList.remove('flash'); void p.$box.offsetWidth; p.$box.classList.add('flash'); hud();
+      }
+    } : null,
+  });
+  if (g === 'rush') { A.target = rushPick(A.P.term.vi); A.P.render(); }
+  A.P.$veil.querySelector('span').textContent = 'Press Start';
+}
+function hud() {
+  const A = ARC; if (!A) return;
+  $('#aScore').textContent = A.score;
+  $('#aKpp').textContent = A.score ? (A.P.keys / A.score).toFixed(1) : '–';
+}
+function startArcade() {
+  const A = ARC; clearInterval(A.timer);
+  A.P.destroy(); A.score = 0; A.warned = false; setupArcade();
+  A.P.locked = false; A.P.$veil.querySelector('span').textContent = 'Click here, then type on your keyboard';
+  const secs = GAMES[A.game].secs; A.end = performance.now() + secs * 1000;
+  $('#aStart').textContent = 'Restart';
+  coach(A.game === 'rush' ? 'Go! Reach the pulsing square. A new one appears every time you land on it.' : 'Go! dd on each XXX line. j/k or /XXX to find them, u if you cut a good line.', 'Timer running', 'hint');
+  hud(); focusPlayer(A.P);
+  A.timer = setInterval(() => {
+    const left = Math.max(0, A.end - performance.now());
+    const el = $('#aTime'); if (el) el.textContent = (left / 1000).toFixed(1);
+    if (left <= 0) {
+      clearInterval(A.timer); A.P.locked = true; A.P.ended = true;
+      const best = prog.best[A.game] || 0; const nb = A.score > best; if (nb) { prog.best[A.game] = A.score; save(); }
+      $('#aBest').textContent = prog.best[A.game] || 0;
+      A.P.$win.hidden = false;
+      A.P.$win.innerHTML = `<div class="wcard"><h3>Time!</h3><p class="wkeys">${A.score} ${GAMES[A.game].unit} · ${A.P.keys} keys</p><p class="wtip">${nb ? 'New personal best.' : `Best is still ${best}.`} ${A.game === 'rush' ? 'Fewer keys per target means you are using w, e, $ and counts instead of tapping l.' : 'Try /XXX then dd, n, dd… to hop between junk lines.'}</p><div class="wbtns"><button class="btn" data-a="next">Play again · Enter</button></div></div>`;
+      A.P.won = true; A.P.opt.onNext = startArcade; refreshVeils();
+    }
+  }, 100);
+}
+
+/* ---------- quiz ---------- */
+const QUIZ = [
+  ['Quit vi and throw away every change', [':q!']], ['Save the file and quit', [':wq', ':x', 'ZZ', ':wq!']], ['Save, but keep editing', [':w']],
+  ['Delete the current line', ['dd']], ['Undo the last change', ['u']], ['Redo (after undo)', ['ctrl-r', 'ctrl+r', '<c-r>', '^r'], true],
+  ['Jump to the last line of the file', ['G', ':$']], ['Jump to the first line of the file', ['gg', ':1', '1G']], ['Move to the end of the line', ['$']],
+  ['Move to the start of the line', ['0', '^']], ['Start typing at the end of the line', ['A']], ['Open a new line below and start typing', ['o']],
+  ['Copy (yank) the current line', ['yy', 'Y']], ['Paste below the current line', ['p']], ['Search forward for the word error', ['/error']],
+  ['Go to the next search match', ['n']], ['Replace every http with https in the whole file', [':%s/http/https/g']], ['Go to line 25', [':25', '25G', '25gg']],
+  ['Turn on line numbers', [':set nu', ':set number']], ['Unfreeze the terminal after an accidental Ctrl-S', ['ctrl-q', 'ctrl+q', '^q', '<c-q>'], true],
+  ['Shell command to bring back vi after Ctrl-Z', ['fg']], ['Delete from the cursor to the end of the line', ['D', 'd$']], ['Change the word under the cursor', ['cw', 'ce']],
+  ['Delete 5 lines starting at the cursor', ['5dd', 'd4j']], ['Leave Insert mode', ['esc', 'escape', 'ctrl-[', '<esc>'], true], ['Replace the character under the cursor with x', ['rx']],
+  ['Open a root-owned file /etc/hosts for editing (shell command)', ['sudo vi /etc/hosts', 'sudo vim /etc/hosts', 'sudoedit /etc/hosts']],
+].map(([q, a, ci]) => ({ q, a, ci }));
+let QZ = null;
+function renderQuiz() {
+  if (!QZ || QZ.done) QZ = { qs: QUIZ.slice().sort(() => Math.random() - .5).slice(0, 10), i: 0, score: 0, answered: false };
+  if (QZ.i >= QZ.qs.length) {
+    QZ.done = true; const best = prog.best.quiz || 0; if (QZ.score > best) { prog.best.quiz = QZ.score; save(); }
+    app.innerHTML = `<div class="page"><header><h1>Key quiz</h1></header><div class="quiz"><h2>${QZ.score} / ${QZ.qs.length}</h2><p>${QZ.score >= 9 ? 'Those keys are in your fingers now.' : QZ.score >= 6 ? 'Solid. Run the lessons you missed, then try again.' : 'Keep drilling. The lessons and arcade build exactly this.'} Best: ${prog.best.quiz || 0}.</p><div class="pbtns"><button class="btn" id="qAgain" type="button">New round</button><button class="btn ghost" id="qL" type="button">Back to lessons</button></div></div></div>`;
+    $('#qAgain').addEventListener('click', () => { QZ = null; renderQuiz(); }); $('#qL').addEventListener('click', () => go('lessons'));
+    return;
+  }
+  const q = QZ.qs[QZ.i];
+  app.innerHTML = `<div class="page"><header><h1>Key quiz</h1><p>Type the exact keys you would press. Case matters, just like in vi. Write special keys as words, like <kbd>Esc</kbd> or <kbd>Ctrl-R</kbd>.</p></header>
+    <div class="quiz"><div class="qmeta">Question ${QZ.i + 1} of ${QZ.qs.length} · Score ${QZ.score}</div><h2>${esc(q.q)}</h2>
+    <form class="qform" id="qf"><input id="qa" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="e.g. dd" aria-label="Your answer"><button class="btn" type="submit">Check</button></form>
+    <div id="qfb"></div></div></div>`;
+  const inp = $('#qa'); inp.focus();
+  $('#qf').addEventListener('submit', e => {
+    e.preventDefault();
+    if (QZ.answered) { QZ.i++; QZ.answered = false; renderQuiz(); return; }
+    const raw = inp.value.trim(); if (!raw) return;
+    const v = raw.replace(/\s+/g, ' ');
+    const ok = q.a.some(a => q.ci ? a.toLowerCase() === v.toLowerCase() : a === v);
+    if (ok) QZ.score++;
+    QZ.answered = true; inp.readOnly = true;
+    $('#qfb').innerHTML = `<div class="qfb ${ok ? 'ok' : 'no'}"><b>${ok ? 'Correct' : 'Not quite'}</b><p>${q.a.length > 1 ? 'Accepted answers' : 'Answer'}: ${q.a.filter(a => !a.startsWith('<') && !a.startsWith('^')).map(kb).join(' ')}</p><p style="font-size:13px;color:var(--muted)">Press Enter for the next question.</p></div>`;
+    $('#qf button').textContent = 'Next';
+  });
+}
+
+/* ---------- key card ---------- */
+function renderKeys() {
+  const groups = [
+    ['Get out', [['Esc', 'Back to Normal mode'], [':q', 'Quit'], [':q!', 'Quit, discard changes'], [':w', 'Save'], [':wq  :x  ZZ', 'Save and quit']]],
+    ['Insert text', [['i  a', 'Before / after cursor'], ['I  A', 'Start / end of line'], ['o  O', 'New line below / above'], ['Esc', 'Stop inserting']]],
+    ['Move', [['h j k l', 'Left, down, up, right'], ['w b e', 'Word forward, back, end'], ['0 ^ $', 'Line start, first char, end'], ['gg  G', 'First / last line'], [':42  42G', 'Go to line 42']]],
+    ['Delete and change', [['x', 'Delete character'], ['dw  dd  D', 'Word, line, to end of line'], ['r', 'Replace one character'], ['cw  C', 'Change word / to end of line'], ['J', 'Join next line onto this one']]],
+    ['Undo, copy, paste', [['u', 'Undo'], ['Ctrl-R', 'Redo'], ['yy  3yy', 'Copy line(s)'], ['p  P', 'Paste below / above'], ['dd … p', 'Move a line']]],
+    ['Search and replace', [['/text  ?text', 'Search forward / back'], ['n  N', 'Next / previous match'], [':%s/a/b/g', 'Replace all a with b'], [':set nu', 'Line numbers'], [':set paste', 'Before pasting over SSH']]],
+    ['Server rescue', [['sudo vi file', 'Edit root-owned files'], ['[readonly]', 'Means you forgot sudo: :q, reopen'], ['E325 → E / D', 'Swap file: edit anyway / delete'], ['Ctrl-Q', 'Unfreeze after Ctrl-S'], ['fg', 'Return to vi after Ctrl-Z']]],
+  ];
+  app.innerHTML = `<div class="page"><header><h1>Key card</h1><p>Everything from the lessons on one page. Counts work in front of most commands: <kbd>3dd</kbd>, <kbd>5j</kbd>, <kbd>2w</kbd>.</p></header>
+    <div class="kgrid">${groups.map(([h, ks]) => `<section><h2>${h}</h2><dl class="keys">${ks.map(([k, d]) => `<div><dt>${kb(k)}</dt><dd>${d}</dd></div>`).join('')}</dl></section>`).join('')}</div></div>`;
+}
+
+/* boot */
+(() => { const h = location.hash.slice(1); if (['lessons', 'arcade', 'quiz', 'keys'].includes(h)) state.view = h; state.ci = firstOpen(state.li); render(); })();
+</script>
