@@ -81,7 +81,10 @@
   --t-bg:#080C11; --t-bar:#111820; --t-line:#26333F; color-scheme:dark;
 }
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+img{max-width:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 kbd{font:600 .82em var(--f-mono);background:var(--surface);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:.05em .4em;white-space:nowrap;color:var(--ink)}
@@ -151,7 +154,7 @@ h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:
 .mode.m-insert{background:#1E3B23;color:var(--t-green)}
 .mode.m-normal{background:#3A2A13;color:var(--t-amber)}
 .mode.m-cmd,.mode.m-search{background:#1B2E46;color:var(--t-blue)}
-.screen{font:14px/1.5 var(--f-mono);padding:10px 0 0;overflow-x:auto;white-space:pre;tab-size:4}
+.screen{font:14px/1.5 var(--f-mono);padding:10px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:4}
 .row{min-height:1.5em;padding:0 14px}
 .row .dim{color:var(--t-dim)}
 .gut{color:var(--t-dim)}
@@ -169,9 +172,11 @@ h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:
 .red{color:var(--t-red)}
 .flash{animation:flash .45s}
 @keyframes flash{0%{box-shadow:inset 0 0 0 3px var(--t-amber)}100%{box-shadow:inset 0 0 0 0 transparent}}
-.veil{position:absolute;inset:34px 0 0;border:0;background:rgba(8,12,17,.62);color:#fff;font:600 15px var(--f-body);display:grid;place-items:center;backdrop-filter:blur(1px)}
+.veil{position:absolute;inset:34px 0 0;z-index:1;pointer-events:none;background:rgba(8,12,17,.62);color:#fff;font:600 15px var(--f-body);display:grid;place-items:center;backdrop-filter:blur(1px)}
+.kin{position:absolute;inset:34px 0 0;z-index:2;width:100%;height:calc(100% - 34px);margin:0;padding:0;border:0;outline:0;resize:none;overflow:hidden;opacity:0;background:transparent;color:transparent;caret-color:transparent;font-size:16px;cursor:text;-webkit-tap-highlight-color:transparent}
+.tbox:focus-within{border-color:var(--t-amber)}
 .veil span{background:var(--t-amber);color:#120C04;padding:8px 16px;border-radius:999px}
-.win{position:absolute;inset:34px 0 0;background:rgba(8,12,17,.86);display:grid;place-items:center;padding:16px}
+.win{position:absolute;inset:34px 0 0;z-index:3;background:rgba(8,12,17,.86);display:grid;place-items:center;padding:16px}
 .wcard{text-align:center;max-width:440px;display:flex;flex-direction:column;gap:8px;align-items:center}
 .wstars{font-size:34px;letter-spacing:4px;color:#36424E}
 .wstars .on{color:var(--t-amber)}
@@ -253,7 +258,6 @@ pre.want .diff{background:var(--accent-soft);color:var(--accent);font-weight:700
 .kgrid h2{font-size:17px;margin-bottom:8px}
 .kgrid .keys{border:0;padding:0;background:none}
 
-#cap{position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;resize:none;pointer-events:none}
 
 @media (max-width:980px){
   .lx{grid-template-columns:1fr;gap:18px}
@@ -310,11 +314,11 @@ pre.want .diff{background:var(--accent-soft);color:var(--accent);font-weight:700
     <noscript><p><strong>viHung needs JavaScript to run the interactive terminal.</strong></p></noscript>
   </div>
 </main>
-<textarea id="cap" aria-label="vi keyboard input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
 
 <script>
 /* ============================== vi engine ============================== */
-const ROWS = 14;
+// Fewer rows on phones so the terminal, key buttons and on-screen keyboard fit together.
+const ROWS = (typeof innerWidth === 'number' && innerWidth < 600) ? 11 : 14;
 const cls = (c, big) => (c === undefined || c === ' ' || c === '\t' || c === '\n') ? 0 : (big ? 1 : (/\w/.test(c) ? 2 : 1));
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -854,22 +858,23 @@ function buildTerm(ch, onEvent) {
   return t;
 }
 
-let ACTIVE = null; const cap = document.getElementById('cap'); let capFocused = false;
-function focusPlayer(p) { ACTIVE = p; try { cap.focus({ preventScroll: true }); } catch (e) { cap.focus(); } refreshVeils(); }
+let ACTIVE = null, CURRENT = null;
+const TOUCH = matchMedia('(pointer:coarse)').matches;
+const SENT = '  '; // keeps the hidden input non-empty so phone keyboards still report Backspace
+function focusPlayer(p) { ACTIVE = p; CURRENT = p; try { p.$in.focus({ preventScroll: true }); } catch (e) { p.$in.focus(); } refreshVeils(); }
 const LIVE = new Set();
-function refreshVeils() { LIVE.forEach(p => { p.$veil.hidden = (ACTIVE === p && capFocused) || p.won || p.ended; }); }
+function refreshVeils() { LIVE.forEach(p => { p.$veil.hidden = document.activeElement === p.$in || p.won || p.ended; }); }
 
 class Player {
   constructor(el, ch, opt = {}) {
     this.el = el; this.ch = ch; this.opt = opt;
-    el.innerHTML = `<div class="tbox"><div class="tbar"><span>ssh deploy@web01</span><span class="mode"></span></div><div class="screen"></div><button type="button" class="veil"><span>Click here, then type on your keyboard</span></button><div class="win" hidden></div></div><div class="strip" aria-live="off"></div>`;
+    el.innerHTML = `<div class="tbox"><div class="tbar"><span>ssh deploy@web01</span><span class="mode"></span></div><div class="screen" aria-hidden="true"></div><div class="veil"><span>${TOUCH ? 'Tap here to start typing' : 'Click here, then type on your keyboard'}</span></div><textarea class="kin" aria-label="Terminal input: type vi keys here" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="enter"></textarea><div class="win" hidden></div></div><div class="strip" aria-live="off"></div>`;
     this.$box = el.querySelector('.tbox'); this.$screen = el.querySelector('.screen'); this.$mode = el.querySelector('.mode');
     this.$veil = el.querySelector('.veil'); this.$win = el.querySelector('.win'); this.$strip = el.querySelector('.strip');
-    this.$box.addEventListener('mousedown', e => { if (e.target.closest('.win')) return; e.preventDefault(); focusPlayer(this); });
-    this.$box.addEventListener('touchend', e => { if (e.target.closest('.win')) return; focusPlayer(this); });
+    this.$in = el.querySelector('.kin'); bindInput(this);
     this.$win.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.a === 'retry') { this.reset(); focusPlayer(this); } else this.opt.onNext && this.opt.onNext(); });
     this.check = this.mkCheck(ch);
-    LIVE.add(this); this.reset();
+    LIVE.add(this); CURRENT = this; this.reset();
   }
   mkCheck(ch) {
     if (ch.check) return ch.check; const p = chPath(ch);
@@ -882,7 +887,7 @@ class Player {
     this.keys = 0; this.ti = 0; this.won = false; this.hint = false; this.locked = !!this.opt.startLocked; this.ended = false;
     this.$win.hidden = true; this.opt.onReset && this.opt.onReset(this); this.render(); refreshVeils();
   }
-  destroy() { LIVE.delete(this); if (ACTIVE === this) ACTIVE = null; }
+  destroy() { LIVE.delete(this); if (ACTIVE === this) ACTIVE = null; if (CURRENT === this) CURRENT = null; }
   tinfo() {
     if (this.opt.target) return { cur: this.opt.target(this) };
     const ts = this.ch.targets; if (!ts) return null;
@@ -936,20 +941,42 @@ function keyName(e) {
   if (e.key.length === 1) return e.key;
   return null;
 }
-cap.addEventListener('keydown', e => {
-  if (!ACTIVE || e.isComposing) return;
-  const k = keyName(e); if (!k) return;
+function resetInput(inp) { inp.value = SENT; try { inp.setSelectionRange(SENT.length, SENT.length); } catch (e) {} }
+function bindInput(p) {
+  const inp = p.$in; resetInput(inp);
+  inp.addEventListener('keydown', e => {
+    if (e.isComposing || e.keyCode === 229) return; // phone keyboards: handled by the input event
+    const k = keyName(e); if (!k) return;
+    e.preventDefault(); ACTIVE = p; CURRENT = p;
+    p.key(k, e.getModifierState && e.getModifierState('CapsLock'));
+  });
+  inp.addEventListener('input', () => {
+    const v = inp.value; resetInput(inp); ACTIVE = p; CURRENT = p;
+    if (v.length < SENT.length) { for (let i = v.length; i < SENT.length; i++) p.key('<BS>'); return; }
+    const added = v.includes(SENT) ? v.replace(SENT, '') : v.trim();
+    for (const c of added) p.key(c === '\n' ? '<CR>' : c);
+  });
+  inp.addEventListener('focus', () => {
+    ACTIVE = p; CURRENT = p; resetInput(inp); refreshVeils();
+    if (TOUCH) setTimeout(() => p.$box.scrollIntoView({ block: 'start', behavior: 'smooth' }), 350);
+  });
+  inp.addEventListener('blur', refreshVeils);
+  inp.addEventListener('mouseup', () => resetInput(inp));
+}
+// On-screen keys: act on touchstart/mousedown and cancel the default so the
+// hidden input keeps focus and the phone keyboard stays open.
+let lastTouch = 0;
+function padPress(e) {
+  const b = e.target.closest('[data-k]'); if (!b) return;
   e.preventDefault();
-  ACTIVE.key(k, e.getModifierState && e.getModifierState('CapsLock'));
-});
-cap.addEventListener('input', () => { const v = cap.value; cap.value = ''; if (!ACTIVE) return; for (const c of v) ACTIVE.key(c === '\n' ? '<CR>' : c); });
-cap.addEventListener('focus', () => { capFocused = true; refreshVeils(); });
-cap.addEventListener('blur', () => { capFocused = false; refreshVeils(); });
-document.addEventListener('mousedown', e => { if (e.target.closest('[data-k]')) e.preventDefault(); });
-document.addEventListener('click', e => {
-  const b = e.target.closest('[data-k]'); if (!b || !ACTIVE) return;
-  ACTIVE.key(b.dataset.k); if (matchMedia('(pointer:fine)').matches) focusPlayer(ACTIVE);
-});
+  if (e.type === 'touchstart') lastTouch = Date.now();
+  else if (Date.now() - lastTouch < 800) return; // already handled by touchstart
+  const p = ACTIVE || CURRENT; if (!p) return;
+  p.key(b.dataset.k);
+  if (!TOUCH) focusPlayer(p);
+}
+document.addEventListener('touchstart', padPress, { passive: false });
+document.addEventListener('mousedown', padPress);
 const PAD = [['<Esc>', 'Esc'], ['<CR>', 'Enter'], ['<BS>', '⌫'], ['<C-r>', 'Ctrl-R'], ['<C-s>', 'Ctrl-S'], ['<C-q>', 'Ctrl-Q'], ['<C-z>', 'Ctrl-Z']];
 const padHTML = () => `<div class="pad" aria-label="Special keys">${PAD.map(([k, l]) => `<button type="button" data-k="${k}">${l}</button>`).join('')}</div>`;
 
