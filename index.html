@@ -1,4 +1,58 @@
-<title>viHung - vi Boot Camp</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>viHung - vi Boot Camp: learn vi and vim by playing</title>
+<meta name="description" content="Learn vi and vim the hands-on way. 12 interactive lessons and 46 drills in a simulated Linux server terminal: quit vi, edit, save, search and replace, fix sudo and swap-file mistakes. Free, no signup.">
+<meta name="keywords" content="learn vi, learn vim, vi tutorial, vim tutorial for beginners, how to exit vim, vi commands, linux server, sysadmin, interactive vim game">
+<meta name="author" content="viHung">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://vi.hung.dev/">
+<meta name="theme-color" content="#0E1318">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<!-- Open Graph (Facebook, LinkedIn, Slack, Discord, Zalo…) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="viHung">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://vi.hung.dev/">
+<meta property="og:title" content="viHung - Stop getting stuck in vi">
+<meta property="og:description" content="Learn vi on a simulated server by typing real keys. 12 lessons, 46 drills, an arcade and a key quiz. Free.">
+<meta property="og:image" content="https://vi.hung.dev/og-image.png">
+<meta property="og:image:secure_url" content="https://vi.hung.dev/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="viHung: Stop getting stuck in vi. A vi terminal editing sshd_config next to the headline.">
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="viHung - Stop getting stuck in vi">
+<meta name="twitter:description" content="Learn vi on a simulated server by typing real keys. 12 lessons, 46 drills, an arcade and a key quiz. Free.">
+<meta name="twitter:image" content="https://vi.hung.dev/og-image.png">
+<meta name="twitter:image:alt" content="viHung: Stop getting stuck in vi. A vi terminal editing sshd_config next to the headline.">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LearningResource",
+  "name": "viHung - vi Boot Camp",
+  "description": "Interactive vi and vim course for beginners with 12 lessons and 46 hands-on drills in a simulated Linux server terminal.",
+  "url": "https://vi.hung.dev/",
+  "image": "https://vi.hung.dev/og-image.png",
+  "inLanguage": "en",
+  "learningResourceType": ["Interactive tutorial", "Game"],
+  "educationalLevel": "Beginner",
+  "teaches": ["vi", "vim", "Linux command line text editing"],
+  "isAccessibleForFree": true,
+  "timeRequired": "PT2H",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -219,6 +273,8 @@ pre.want .diff{background:var(--accent-soft);color:var(--accent);font-weight:700
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+</head>
+<body>
 
 <div class="top"><div class="wrap">
   <div class="brand"><span class="logo">:viHung</span>vi Boot Camp</div>
@@ -230,7 +286,30 @@ pre.want .diff{background:var(--accent-soft);color:var(--accent);font-weight:700
   </nav>
   <div class="rank"><span>Rank <b id="rankName">Trapped in vi</b></span><div class="bar"><i id="rankBar" style="width:0%"></i></div><span><b id="starCount">0</b> ★</span></div>
 </div></div>
-<main id="view" class="wrap"></main>
+<main id="view" class="wrap">
+  <!-- Static content for search engines and no-JS visitors; replaced when the app starts. -->
+  <div class="page">
+    <header><h1>Learn vi and vim by playing</h1>
+    <p>viHung is a free, interactive vi trainer. You type real keystrokes into a simulated Linux server terminal and get instant feedback, so you stop getting stuck in vi.</p></header>
+    <h2>12 lessons, 46 drills</h2>
+    <ol>
+      <li>Get out alive: how to exit vi with :q and :q!</li>
+      <li>Normal mode and Insert mode</li>
+      <li>Saving and quitting: :w, :wq, :x, ZZ</li>
+      <li>Moving with h, j, k, l and counts</li>
+      <li>Jumping by word, line and file: w, b, e, 0, $, gg, G, :42</li>
+      <li>Deleting: x, dw, dd, D</li>
+      <li>Undo and redo: u and Ctrl-R</li>
+      <li>More ways into Insert mode: a, A, I, o, O</li>
+      <li>Copy and paste: yy, p, P</li>
+      <li>Search: /, ?, n, N</li>
+      <li>Replace: r, cw, :%s/old/new/g</li>
+      <li>Server missions: sudo vi, swap files (E325), frozen terminal (Ctrl-S), suspended vi (Ctrl-Z)</li>
+    </ol>
+    <p>Plus an arcade with timed games, a key quiz and a printable key card.</p>
+    <noscript><p><strong>viHung needs JavaScript to run the interactive terminal.</strong></p></noscript>
+  </div>
+</main>
 <textarea id="cap" aria-label="vi keyboard input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
 
 <script>
@@ -1334,3 +1413,5 @@ function renderKeys() {
 /* boot */
 (() => { const h = location.hash.slice(1); if (['lessons', 'arcade', 'quiz', 'keys'].includes(h)) state.view = h; state.ci = firstOpen(state.li); render(); })();
 </script>
+</body>
+</html>

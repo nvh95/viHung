@@ -1,0 +1,49 @@
+<!doctype html>
+<!-- Source for og-image.png (1200x630). Re-render with: see README "Social preview image". -->
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+:root{--bg:#0E1318;--ink:#E3E9EF;--muted:#97A5B3;--amber:#F2A649;--t-bg:#080C11;--t-bar:#111820;--t-line:#26333F;--green:#8FD18B;--red:#FF7B72;--dim:#4E5C6A}
+*{box-sizing:border-box;margin:0}
+html,body{width:1200px;height:630px;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',Helvetica,Arial,sans-serif;display:grid;grid-template-columns:520px 1fr;gap:48px;padding:64px 64px 64px 72px;position:relative}
+body::after{content:"";position:absolute;left:0;right:0;bottom:0;height:8px;background:var(--amber)}
+.left{display:flex;flex-direction:column;justify-content:center;gap:22px}
+.logo{display:inline-flex;align-self:flex-start;font:700 26px 'JetBrains Mono',Menlo,monospace;background:var(--t-bg);color:var(--amber);padding:6px 14px;border-radius:10px;border:1px solid var(--t-line)}
+h1{font:800 84px/0.98 'Bricolage Grotesque','Helvetica Neue',Arial,sans-serif;letter-spacing:-.02em}
+h1 span{color:var(--amber)}
+p{font-size:28px;line-height:1.35;color:var(--muted);max-width:470px}
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chips b{font:600 19px 'IBM Plex Sans',sans-serif;border:1.5px solid var(--t-line);border-radius:999px;padding:6px 16px;color:var(--ink)}
+.term{align-self:center;background:var(--t-bg);border:1px solid var(--t-line);border-radius:16px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,.45)}
+.bar{display:flex;justify-content:space-between;align-items:center;background:var(--t-bar);padding:12px 18px;font:16px 'JetBrains Mono',Menlo,monospace;color:#8B99A7;border-bottom:1px solid var(--t-line)}
+.mode{font-weight:700;background:#3A2A13;color:var(--amber);padding:3px 10px;border-radius:6px;letter-spacing:.06em}
+pre{font:19px/1.6 'JetBrains Mono',Menlo,monospace;padding:16px 20px 0;color:#D6DFE8;white-space:pre}
+.c{background:var(--amber);color:#120C04}
+.d{color:var(--dim)}
+.k{color:#7DB9FF}
+.st{display:flex;justify-content:space-between;background:#121A23;margin-top:8px;padding:6px 20px;font:19px 'JetBrains Mono',Menlo,monospace}
+.st .r{color:#8B99A7}
+</style></head>
+<body>
+  <div class="left">
+    <span class="logo">:viHung</span>
+    <h1>Stop getting <span>stuck</span> in vi.</h1>
+    <p>Learn vi on a simulated server by typing real keys, not reading docs.</p>
+    <div class="chips"><b>12 lessons</b><b>46 drills</b><b>Arcade</b><b>Free</b></div>
+  </div>
+  <div class="term">
+    <div class="bar"><span>ssh deploy@web01</span><span class="mode">NORMAL</span></div>
+<pre><span class="d"># /etc/ssh/sshd_config</span>
+Include /etc/ssh/sshd_config.d/*.conf
+<span class="k">Port</span> 2222
+PermitRootLogin prohibit-password
+PubkeyAuthentication yes
+<span class="k">PasswordAuthentication</span> n<span class="c">o</span>
+UsePAM yes
+X11Forwarding no
+<span class="d">~</span>
+<span class="d">~</span></pre>
+    <div class="st"><span>:wq</span><span class="r">6,24&nbsp;&nbsp;&nbsp;All</span></div>
+  </div>
+</body></html>

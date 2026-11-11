@@ -2,6 +2,8 @@
 
 An interactive, game-style trainer that teaches beginners to use `vi` on a Linux server. Instead of reading about commands, learners type real keystrokes into a simulated SSH terminal and get instant feedback.
 
+Try it now: <https://vi.hung.dev>
+
 
 ## What's inside
 
@@ -43,6 +45,22 @@ python3 -m http.server 8000
 Then visit http://localhost:8000. Click the terminal to focus it and type on your keyboard. On phones, buttons below the terminal provide Esc, Enter, Backspace and the Ctrl keys, but a physical keyboard works best.
 
 Progress (stars, arcade best scores, current lesson) is stored in the browser's `localStorage` under the key `viBootCamp.v1`. Clearing site data resets it.
+
+## SEO and social sharing
+
+The site is deployed to https://vi.hung.dev/ by CI on every push to `main`. If the domain changes, replace that URL in `index.html` (canonical link, Open Graph, Twitter and JSON-LD tags), `sitemap.xml` and `robots.txt`. Social networks need absolute image URLs.
+
+- `index.html` has a title and description, a canonical link, Open Graph and Twitter Card tags, `LearningResource` structured data (JSON-LD), and static lesson content inside `<main>` that search engines can read before the app starts.
+- `og-image.png` (1200×630) is the preview image shown when the link is shared on social media. Its source is `og/og-image.html`. To re-render it after editing:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --hide-scrollbars --force-device-scale-factor=1 --window-size=1200,630 --virtual-time-budget=4000 --screenshot="$PWD/og-image.png" "file://$PWD/og/og-image.html"
+```
+
+- `favicon.svg` is the source icon. `favicon.ico` (16, 32, 48 and 256 px) and `apple-touch-icon.png` (180 px) are rendered from it with `rsvg-convert` (`brew install librsvg`).
+- `sitemap.xml` lists the page and `robots.txt` points crawlers to it. Submit it in Google Search Console.
+
+Social sites cache previews. After changing the image, refresh it with the [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) or the [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/).
 
 ## How it works
 
