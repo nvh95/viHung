@@ -3,13 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Google tag (Google Tag Manager container GTM-K3K3JM2Q) -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-K3K3JM2Q"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+</script>
 <title>viHung - vi Boot Camp: learn vi and vim by playing</title>
 <meta name="description" content="Learn vi and vim the hands-on way. 12 interactive lessons and 46 drills in a simulated Linux server terminal: quit vi, edit, save, search and replace, fix sudo and swap-file mistakes. Free, no signup.">
 <meta name="keywords" content="learn vi, learn vim, vi tutorial, vim tutorial for beginners, how to exit vim, vi commands, linux server, sysadmin, interactive vim game">
 <meta name="author" content="viHung">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <link rel="canonical" href="https://vi.hung.dev/">
-<meta name="theme-color" content="#0E1318">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161E26" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -54,6 +62,10 @@
 }
 </script>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script>
+/* Apply a saved Light/Dark choice before the page paints (no flash). "system" = follow the device. */
+try { var t = localStorage.getItem('viHung.theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600;700&display=swap">
@@ -93,18 +105,26 @@ h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:
 
 /* top bar */
 .top{border-bottom:1px solid var(--line);background:var(--surface)}
-.top .wrap{display:flex;align-items:center;gap:16px 24px;flex-wrap:wrap;padding-block:12px}
-.brand{display:flex;align-items:center;gap:10px;font:800 20px var(--f-display)}
+/* header is always a single row; lower-priority bits drop out as the width shrinks */
+.top .wrap{display:flex;align-items:center;gap:20px;flex-wrap:nowrap;padding-block:12px}
+.brand{display:flex;align-items:center;gap:10px;font:800 20px var(--f-display);flex:none;white-space:nowrap}
 .logo{font:700 14px var(--f-mono);background:var(--t-bg);color:var(--t-amber);padding:4px 8px;border-radius:6px}
-.tabs{display:flex;gap:4px;flex-wrap:wrap}
-.tabs button{border:0;background:none;padding:6px 12px;border-radius:999px;font-weight:500;color:var(--muted)}
+.tabs{display:flex;gap:4px;flex-wrap:nowrap;min-width:0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{border:0;background:none;padding:6px 12px;border-radius:999px;font-weight:500;color:var(--muted);white-space:nowrap}
 .tabs button[aria-current="page"]{background:var(--ink);color:var(--bg)}
 .tabs button:hover:not([aria-current="page"]){background:var(--sunk);color:var(--ink)}
-.rank{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted)}
+.rank{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted);flex:none;white-space:nowrap}
 .rank b{color:var(--ink);font-weight:600}
 .bar{width:110px;height:6px;background:var(--sunk);border-radius:9px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--accent);border-radius:9px;transition:width .4s}
 .tabs .sm{display:none}
+.themebtn{display:inline-grid;place-items:center;width:34px;height:34px;flex:none;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink);padding:0}
+.themebtn:hover{background:var(--sunk)}
+.themebtn svg{width:17px;height:17px}
+/* medium widths: drop the rank name and bar, then the "vi Boot Camp" wordmark */
+@media (max-width:1100px){.rlabel,.rank .bar{display:none}}
+@media (max-width:800px){.bname{display:none}}
 /* phones: one slim row with logo, tabs and star count */
 @media (max-width:640px){
   .top .wrap{flex-wrap:nowrap;gap:10px;padding-block:8px}
@@ -114,8 +134,9 @@ h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:
   .logo{font-size:12px;padding:3px 6px}
   .tabs{flex:1 1 auto;min-width:0;flex-wrap:nowrap;gap:2px;overflow-x:auto;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
-  .tabs button{padding:5px 9px;font-size:14px;white-space:nowrap;text-transform:capitalize}
-  .rank{flex:none;margin-left:0;font-size:13px}
+  .tabs button{padding:5px 8px;font-size:14px;white-space:nowrap;text-transform:capitalize}
+  .rank{flex:none;margin-left:0;font-size:13px;gap:8px}
+  .themebtn{width:30px;height:30px}
 }
 
 /* lesson layout */
@@ -373,6 +394,10 @@ dialog.hint .btn{align-self:flex-end;margin-top:6px}
   .watch{grid-template-columns:1fr}
 }
 @media (max-width:640px){.lx,.page{padding-block:14px 48px}}
+/* narrow phones: make room for the theme button; stars still show on drill tabs and the lesson list */
+@media (max-width:420px){.rank .stars{display:none}}
+/* very narrow phones (≤379px): tighten everything so all four tabs still fit */
+@media (max-width:379px){.top .wrap{gap:4px}.logo{font-size:11px;padding:3px 5px}.tabs{gap:0}.tabs button{padding:5px 6px;font-size:13px}.themebtn{width:28px;height:28px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -386,7 +411,7 @@ dialog.hint .btn{align-self:flex-end;margin-top:6px}
     <button data-view="quiz"><span class="lg">Key </span>quiz</button>
     <button data-view="keys"><span class="lg">Key card</span><span class="sm">Keys</span></button>
   </nav>
-  <div class="rank"><span class="rlabel">Rank <b id="rankName">Trapped in vi</b></span><div class="bar"><i id="rankBar" style="width:0%"></i></div><span class="stars" title="Stars earned"><b id="starCount">0</b> ★</span></div>
+  <div class="rank"><span class="rlabel">Rank <b id="rankName">Trapped in vi</b></span><div class="bar"><i id="rankBar" style="width:0%"></i></div><span class="stars" title="Stars earned"><b id="starCount">0</b> ★</span><button class="themebtn" id="themeBtn" type="button"></button></div>
 </div></div>
 <main id="view" class="wrap">
   <!-- Static content for search engines and no-JS visitors; replaced when the app starts. -->
@@ -1707,6 +1732,27 @@ function renderKeys() {
   app.innerHTML = `<div class="page"><header><h1>Key card</h1><p>Everything from the lessons on one page. Counts work in front of most commands: <kbd>3dd</kbd>, <kbd>5j</kbd>, <kbd>2w</kbd>.</p></header>
     <div class="kgrid">${groups.map(([h, ks]) => `<section><h2>${h}</h2><dl class="keys">${ks.map(([k, d]) => `<div><dt>${kb(k)}</dt><dd>${d}</dd></div>`).join('')}</dl></section>`).join('')}</div></div>`;
 }
+
+/* ---------- theme toggle: System → Light → Dark ---------- */
+const THEME_ICON = {
+  system: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 3a7 7 0 0 1 0 14z" fill="currentColor"/></svg>',
+  light: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 1.8v2.4M10 15.8v2.4M1.8 10h2.4M15.8 10h2.4M4.2 4.2l1.7 1.7M14.1 14.1l1.7 1.7M4.2 15.8l1.7-1.7M14.1 5.9l1.7-1.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  dark: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.5 12.6A7 7 0 0 1 7.4 3.5a7 7 0 1 0 9.1 9.1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+};
+const THEME_NAME = { system: 'System', light: 'Light', dark: 'Dark' };
+function getTheme() { try { const t = localStorage.getItem('viHung.theme'); return t === 'light' || t === 'dark' ? t : 'system'; } catch (e) { return 'system'; } }
+function applyTheme(t) {
+  if (t === 'system') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t);
+  try { if (t === 'system') localStorage.removeItem('viHung.theme'); else localStorage.setItem('viHung.theme', t); } catch (e) {}
+  const dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => { m.setAttribute('content', dark ? '#161E26' : '#FFFFFF'); if (t !== 'system') m.removeAttribute('media'); });
+  const b = document.getElementById('themeBtn'), next = { system: 'light', light: 'dark', dark: 'system' }[t];
+  b.innerHTML = THEME_ICON[t];
+  b.title = `Theme: ${THEME_NAME[t]}. Click for ${THEME_NAME[next]}.`;
+  b.setAttribute('aria-label', `Theme: ${THEME_NAME[t]}. Switch to ${THEME_NAME[next]}`);
+}
+document.getElementById('themeBtn').addEventListener('click', () => applyTheme({ system: 'light', light: 'dark', dark: 'system' }[getTheme()]));
+applyTheme(getTheme());
 
 /* boot */
 (() => { const h = location.hash.slice(1); if (['lessons', 'arcade', 'quiz', 'keys'].includes(h)) state.view = h;

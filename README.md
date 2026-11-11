@@ -28,6 +28,7 @@ Try it now: <https://vi.hung.dev>
 - **Arcade**: two 60-second games, *Cursor Rush* (reach targets fast) and *Line Surgeon* (delete junk lines, keep good ones).
 - **Key quiz**: type the exact keys for 10 random tasks.
 - **Key card**: every command from the lessons on one page.
+- **Light and dark mode**: follows the device by default; the round button at the top right cycles System → Light → Dark and remembers the choice (`localStorage` key `viHung.theme`).
 
 ## Running it
 
