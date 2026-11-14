@@ -28,6 +28,7 @@ Try it now: <https://vi.hung.dev>
 - **Arcade**: two 60-second games, *Cursor Rush* (reach targets fast) and *Line Surgeon* (delete junk lines, keep good ones).
 - **Key quiz**: type the exact keys for 10 random tasks.
 - **Key card**: every command from the lessons on one page.
+- **Animations**: slides build up piece by piece, keys bounce when you press them, the mode badge pops when vi changes mode, goal checkboxes tick as they turn green, and the vi cursor blinks. Wins land their stars one by one with confetti (more for more stars), stars float into the header counter, and banners announce a finished lesson, a new rank or a new arcade best. Everything is turned off when the device asks for reduced motion.
 - **Light and dark mode**: follows the device by default; the round button at the top right cycles System → Light → Dark and remembers the choice (`localStorage` key `viHung.theme`).
 
 ## Running it
